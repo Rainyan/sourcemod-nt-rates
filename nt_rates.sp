@@ -42,7 +42,7 @@ public Plugin:myinfo = {
 	description	= "Improved interp and rate control.",
 	author			= "Rain",
 	version			= PLUGIN_VERSION,
-	url				= ""
+	url				= "https://github.com/Rainyan/sourcemod-nt-rates"
 };
 
 public OnPluginStart()
@@ -64,12 +64,11 @@ public OnPluginStart()
 public OnMapStart()
 {
 	if (hTimer_RateCheck == INVALID_HANDLE) {
-		new Float:interval;
-		interval = GetConVarFloat(hCvar_Interval);
+		new Float:interval = GetConVarFloat(hCvar_Interval);
 		if (interval < 1)
 			interval = 1.0;
 		
-		hTimer_RateCheck = CreateTimer(interval , Timer_RateCheck, _, TIMER_REPEAT );
+		hTimer_RateCheck = CreateTimer(interval , Timer_RateCheck, _, TIMER_REPEAT);
 	}
 }
 
@@ -94,11 +93,11 @@ void ValidateRates(client)
 		return;
 	}
 	
-	decl String:rate[MAX_RATE_LENGTH];
-	decl String:cmdRate[MAX_RATE_LENGTH];
-	decl String:updateRate[MAX_RATE_LENGTH];
-	decl String:interp[MAX_RATE_LENGTH];
-	decl String:interpEnabled[MAX_RATE_LENGTH];
+	decl String:rate					[MAX_RATE_LENGTH];
+	decl String:cmdRate			[MAX_RATE_LENGTH];
+	decl String:updateRate		[MAX_RATE_LENGTH];
+	decl String:interp				[MAX_RATE_LENGTH];
+	decl String:interpEnabled	[MAX_RATE_LENGTH];
 	
 	GetClientInfo(client, "rate", rate, MAX_RATE_LENGTH);
 	GetClientInfo(client, "cl_cmdrate", cmdRate, MAX_RATE_LENGTH);
