@@ -47,18 +47,18 @@ public Plugin:myinfo = {
 
 public OnPluginStart()
 {
-	hCvar_Interval					= CreateConVar("nt_rates_interval", "1.0", "Interval in seconds to check players' rate values.", _, true, 1.0);
+	hCvar_Interval					= CreateConVar("sm_rates_interval", "1.0", "Interval in seconds to check players' rate values.", _, true, 1.0);
 	
-	hCvar_DefaultRate			= CreateConVar("nt_rates_default_rate", "128000", "Default rate value.", _, true, 20000.0, true, 128000.0);
-	hCvar_DefaultCmdRate		= CreateConVar("nt_rates_default_cmdrate", "66", "Default cl_cmdrate value.", _, true, 60.0, true, 66.0);
-	hCvar_DefaultUpdateRate	= CreateConVar("nt_rates_default_updaterate", "66", "Default cl_updaterate value.", _, true, 60.0, true, 66.0);
-	hCvar_DefaultInterp			= CreateConVar("nt_rates_default_interp", "0.02", "Default cl_interp value.", _, true, 0.0, true, 0.1);
+	hCvar_DefaultRate			= CreateConVar("sm_rates_default_rate", "128000", "Default rate value.", _, true, 20000.0, true, 128000.0);
+	hCvar_DefaultCmdRate		= CreateConVar("sm_rates_default_cmdrate", "66", "Default cl_cmdrate value.", _, true, 60.0, true, 66.0);
+	hCvar_DefaultUpdateRate	= CreateConVar("sm_rates_default_updaterate", "66", "Default cl_updaterate value.", _, true, 60.0, true, 66.0);
+	hCvar_DefaultInterp			= CreateConVar("sm_rates_default_interp", "0.02", "Default cl_interp value.", _, true, 0.0, true, 0.1);
 	
-	hCvar_MinInterp				= CreateConVar("nt_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, 0.0, true, 0.02);
-	hCvar_MaxInterp				= CreateConVar("nt_rates_max_interp", "0.02", "Maximum allowed cl_interp value.", _, true, 0.0, true, 0.02);
-	hCvar_ForceInterp			= CreateConVar("nt_rates_force_interp", "1", "Whether or not to enforce clientside interp. This should be enabled.", _, true, 0.0, true, 1.0);
+	hCvar_MinInterp				= CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, 0.0, true, 0.02);
+	hCvar_MaxInterp				= CreateConVar("sm_rates_max_interp", "0.02", "Maximum allowed cl_interp value.", _, true, 0.0, true, 0.02);
+	hCvar_ForceInterp			= CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp. This should be enabled.", _, true, 0.0, true, 1.0);
 	
-	hCvar_Verbosity				= CreateConVar("nt_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). 1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).", _, true, 0.0, true, 2.0);
+	hCvar_Verbosity				= CreateConVar("sm_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). 1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).", _, true, 0.0, true, 2.0);
 }
 
 public OnMapStart()
