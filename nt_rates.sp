@@ -20,7 +20,7 @@ new Handle:hCvar_MaxInterp;
 new Handle:hCvar_ForceInterp;
 new Handle:hCvar_Verbosity;
 
-new String:g_tag[] = "[RATE]";
+new String:g_tag[] = "(debug)";
 
 new bool:wasInterpFixedThisPass[MAXPLAYERS+1];
 
@@ -42,7 +42,7 @@ public Plugin:myinfo = {
 	description	= "Improved interp and rate control.",
 	author			= "Rain",
 	version			= PLUGIN_VERSION,
-	url				= "https://github.com/Rainyan/sourcemod-nt-rates"
+	url				= ""
 };
 
 public OnPluginStart()
@@ -75,7 +75,7 @@ public OnMapStart()
 public Action:Timer_RateCheck(Handle:timer)
 {
 	for (new i = 1; i <= MaxClients; i++) {
-		if ( !Client_IsValid(i) )
+		if ( !Client_IsValid(i) || IsFakeClient(i) || !IsClientInGame(i) )
 			continue;
 		
 		wasInterpFixedThisPass[i] = false;
