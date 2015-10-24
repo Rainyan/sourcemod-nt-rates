@@ -3,7 +3,7 @@
 #include <sourcemod>
 #include <smlib>
 
-#define PLUGIN_VERSION "0.1.1"
+#define PLUGIN_VERSION "0.1.2"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -42,7 +42,7 @@ public Plugin:myinfo = {
 	description	= "Improved interp and rate control.",
 	author			= "Rain",
 	version			= PLUGIN_VERSION,
-	url				= ""
+	url				= "https://github.com/Rainyan/sourcemod-nt-rates"
 };
 
 public OnPluginStart()
@@ -55,7 +55,7 @@ public OnPluginStart()
 	hCvar_DefaultInterp			= CreateConVar("sm_rates_default_interp", "0.02", "Default cl_interp value.", _, true, 0.0, true, 0.1);
 	
 	hCvar_MinInterp				= CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, 0.0, true, 0.02);
-	hCvar_MaxInterp				= CreateConVar("sm_rates_max_interp", "0.02", "Maximum allowed cl_interp value.", _, true, 0.0, true, 0.02);
+	hCvar_MaxInterp				= CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, 0.0, true, 0.1);
 	hCvar_ForceInterp			= CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp. This should be enabled.", _, true, 0.0, true, 1.0);
 	
 	hCvar_Verbosity				= CreateConVar("sm_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). 1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).", _, true, 0.0, true, 2.0);
