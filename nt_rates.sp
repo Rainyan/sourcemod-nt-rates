@@ -218,13 +218,16 @@ void RestoreRate(const int client, const int rateType)
 	if (!IsValidClient(client)) {
 		return;
 	}
-	
+
+	int verbosity = hCvar_Verbosity.IntValue;
+
 	decl String:msg[MAX_MESSAGE_LENGTH];
 	decl String:clientName[MAX_NAME_LENGTH];
-	GetClientName(client, clientName, sizeof(clientName));
-	
-	int verbosity = hCvar_Verbosity.IntValue;
-	
+
+	if (verbosity > VERBOSITY_NONE) {
+		GetClientName(client, clientName, sizeof(clientName));
+	}
+
 	switch (rateType)
 	{
 		case TYPE_RATE:
@@ -312,11 +315,14 @@ void CapInterp(const int client, const int capType)
 	if (!IsValidClient(client))
 		return;
 	
+	int verbosity = hCvar_Verbosity.IntValue;
+	
 	decl String:msg[MAX_MESSAGE_LENGTH];
 	decl String:clientName[MAX_NAME_LENGTH];
-	GetClientName(client, clientName, sizeof(clientName));
 	
-	int verbosity = hCvar_Verbosity.IntValue;
+	if (verbosity > VERBOSITY_NONE) {
+		GetClientName(client, clientName, sizeof(clientName));
+	}
 	
 	switch (capType)
 	{
