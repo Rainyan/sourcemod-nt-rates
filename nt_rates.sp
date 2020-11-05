@@ -2,14 +2,14 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.1.4"
+#define PLUGIN_VERSION "0.1.5"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
 
 #define NEO_MAXPLAYERS 32
 
-//Handle hTimer_RateCheck = null;
+Handle hTimer_RateCheck = null;
 
 ConVar hCvar_Interval, hCvar_DefaultRate, hCvar_DefaultCmdRate,
 	hCvar_DefaultUpdateRate, hCvar_DefaultInterp, hCvar_MinInterp,
@@ -58,7 +58,24 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
-	/*hTimer_RateCheck = */CreateTimer(hCvar_Interval.FloatValue , Timer_RateCheck, _, TIMER_REPEAT);
+	hTimer_RateCheck = CreateTimer(hCvar_Interval.FloatValue , Timer_RateCheck, _, TIMER_REPEAT);
+
+	HookConVarChange(hCvar_Interval, CvarChanged_Interval);
+}
+
+float Clamp(const float value, const float min, const float max)
+{
+	return value < min ? min : value > max ? max : value;
+}
+
+void CvarChanged_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	float min, max;
+	convar.GetBounds(ConVarBound_Lower, min);
+	convar.GetBounds(ConVarBound_Upper, max);
+
+	delete hTimer_RateCheck;
+	hTimer_RateCheck = CreateTimer(Clamp(StringToFloat(newValue), min, max), Timer_RateCheck, _, TIMER_REPEAT);
 }
 
 public Action Timer_RateCheck(Handle timer)
