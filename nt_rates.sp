@@ -2,7 +2,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.1.5"
+#define PLUGIN_VERSION "0.1.6"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -32,6 +32,14 @@ enum {
 	TYPE_MAX
 };
 
+enum {
+	VERBOSITY_NONE = 0,
+	VERBOSITY_PUBLIC,
+	VERBOSITY_ADMIN_ONLY,
+
+	VERBOSITY_MAX_VALUE = VERBOSITY_ADMIN_ONLY
+};
+
 public Plugin myinfo = {
 	name			= "NT Rates",
 	description	= "Improved interp and rate control.",
@@ -53,7 +61,9 @@ public void OnPluginStart()
 	hCvar_MaxInterp				= CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, 0.0, true, 0.1);
 	hCvar_ForceInterp			= CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp. This should be enabled.", _, true, 0.0, true, 1.0);
 	
-	hCvar_Verbosity				= CreateConVar("sm_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). 1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).", _, true, 0.0, true, 2.0);
+	hCvar_Verbosity				= CreateConVar("sm_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). \
+1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).",
+		_, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
 }
 
 public void OnMapStart()
@@ -61,11 +71,6 @@ public void OnMapStart()
 	hTimer_RateCheck = CreateTimer(hCvar_Interval.FloatValue , Timer_RateCheck, _, TIMER_REPEAT);
 
 	HookConVarChange(hCvar_Interval, CvarChanged_Interval);
-}
-
-float Clamp(const float value, const float min, const float max)
-{
-	return value < min ? min : value > max ? max : value;
 }
 
 void CvarChanged_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -194,7 +199,8 @@ void ValidateRates(const int client)
 		wasDecimalLastChar = false;
 	}
 	
-	// This player's cl_interp was just reset to defaults this pass. Stop here, so we don't nag about incorrect values again needlessly.
+	// This player's cl_interp was just reset to defaults this pass.
+	// Stop here, so we don't nag about incorrect values again needlessly.
 	if (wasInterpFixedThisPass[client])
 		return;
 	
@@ -228,7 +234,7 @@ void RestoreRate(const int client, const int rateType)
 			
 			ClientCommand(client, "rate %s", defaultRate);
 			
-			if (verbosity > 0)
+			if (verbosity > VERBOSITY_NONE)
 			{
 				Format(msg, sizeof(msg), "%s Player \"%s\" had an invalid rate. Value has been reset to \"%s\"",
 					g_tag, clientName, defaultRate);
@@ -242,7 +248,7 @@ void RestoreRate(const int client, const int rateType)
 			
 			ClientCommand(client, "cl_cmdrate %s", defaultCmdRate);
 			
-			if (verbosity > 0)
+			if (verbosity > VERBOSITY_NONE)
 			{
 				Format(msg, sizeof(msg), "%s Player \"%s\" had an invalid cl_cmdrate. Value has been reset to \"%s\"",
 					g_tag, clientName, defaultCmdRate);
@@ -256,7 +262,7 @@ void RestoreRate(const int client, const int rateType)
 			
 			ClientCommand(client, "cl_updaterate %s", defaultUpdateRate);
 			
-			if (verbosity > 0)
+			if (verbosity > VERBOSITY_NONE)
 			{
 				Format(msg, sizeof(msg), "%s Player \"%s\" had an invalid cl_updaterate. Value has been reset to \"%s\"",
 					g_tag, clientName, defaultUpdateRate);
@@ -291,11 +297,11 @@ void RestoreRate(const int client, const int rateType)
 		}
 	}
 	
-	if (verbosity == 1)
+	if (verbosity == VERBOSITY_PUBLIC)
 	{
 		PrintToChatAll(msg);
 	}
-	else if (verbosity == 2)
+	else if (verbosity == VERBOSITY_ADMIN_ONLY)
 	{
 		PrintToAdminsChat(msg);
 	}
@@ -321,7 +327,7 @@ void CapInterp(const int client, const int capType)
 			
 			ClientCommand(client, "cl_interp %s", minInterp);
 			
-			if (verbosity > 0)
+			if (verbosity > VERBOSITY_NONE)
 			{
 				Format(msg, sizeof(msg), "%s Player \"%s\" had smaller cl_interp than allowed. Value has been capped to the minimum \"%s\"",
 					g_tag, clientName, minInterp);
@@ -335,7 +341,7 @@ void CapInterp(const int client, const int capType)
 			
 			ClientCommand(client, "cl_interp %s", maxInterp);
 			
-			if (verbosity > 0)
+			if (verbosity > VERBOSITY_NONE)
 			{
 				Format(msg, sizeof(msg), "%s Player \"%s\" had bigger cl_interp than allowed. Value has been capped to the maximum \"%s\"",
 					g_tag, clientName, maxInterp);
@@ -343,11 +349,11 @@ void CapInterp(const int client, const int capType)
 		}
 	}
 	
-	if (verbosity == 1)
+	if (verbosity == VERBOSITY_PUBLIC)
 	{
 		PrintToChatAll(msg);
 	}
-	else if (verbosity == 2)
+	else if (verbosity == VERBOSITY_ADMIN_ONLY)
 	{
 		PrintToAdminsChat(msg);
 	}
@@ -368,4 +374,9 @@ void PrintToAdminsChat(const char[] message)
 		
 		PrintToChat(client, message);
 	}
+}
+
+float Clamp(const float value, const float min, const float max)
+{
+	return value < min ? min : value > max ? max : value;
 }
