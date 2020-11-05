@@ -15,7 +15,7 @@ ConVar hCvar_Interval, hCvar_DefaultRate, hCvar_DefaultCmdRate,
 	hCvar_DefaultUpdateRate, hCvar_DefaultInterp, hCvar_MinInterp,
 	hCvar_MaxInterp, hCvar_ForceInterp, hCvar_Verbosity;
 
-char g_tag[] = "(debug)";
+new const String:g_tag[] = "[NT RATES]";
 
 bool wasInterpFixedThisPass[NEO_MAXPLAYERS + 1];
 
