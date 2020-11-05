@@ -1,9 +1,8 @@
+#include <sourcemod>
+
 #pragma semicolon 1
 
-#include <sourcemod>
-#include <smlib>
-
-#define PLUGIN_VERSION "0.1.2"
+#define PLUGIN_VERSION "0.1.3"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -75,7 +74,7 @@ public OnMapStart()
 public Action:Timer_RateCheck(Handle:timer)
 {
 	for (new i = 1; i <= MaxClients; i++) {
-		if ( !Client_IsValid(i) || IsFakeClient(i) || !IsClientInGame(i) )
+		if ( !IsValidClient(i) || IsFakeClient(i) || !IsClientInGame(i) )
 			continue;
 		
 		wasInterpFixedThisPass[i] = false;
@@ -89,7 +88,7 @@ public Action:Timer_RateCheck(Handle:timer)
 // Make sure rates are properly formatted
 void ValidateRates(client)
 {
-	if ( !Client_IsValid(client) ) {
+	if ( !IsValidClient(client) ) {
 		return;
 	}
 	
@@ -201,7 +200,7 @@ void ValidateRates(client)
 
 void RestoreRate(client, rateType)
 {
-	if ( !Client_IsValid(client) ) {
+	if ( !IsValidClient(client) ) {
 		return;
 	}
 	
@@ -268,12 +267,12 @@ void RestoreRate(client, rateType)
 	if (verbosity == 1)
 		PrintToChatAll(msg);
 	else if (verbosity == 2)
-		PrintToAdmins(msg);
+		PrintToAdminsChat(msg);
 }
 
 void CapInterp(client, capType)
 {
-	if ( !Client_IsValid(client) )
+	if ( !IsValidClient(client) )
 		return;
 	
 	decl String:msg[MAX_MESSAGE_LENGTH];
@@ -310,15 +309,22 @@ void CapInterp(client, capType)
 	if (verbosity == 1)
 		PrintToChatAll(msg);
 	else if (verbosity == 2)
-		PrintToAdmins(msg);
+		PrintToAdminsChat(msg);
 }
 
-void PrintToAdmins(const String:message[])
+bool IsValidClient(int client)
 {
-	for (new i = 1; i <= MaxClients; i++) {
-		if ( !Client_IsValid(i) || !Client_IsAdmin(i) )
+	return (client > 0 || client <= MaxClients) && (IsClientInGame(client));
+}
+
+void PrintToAdminsChat(const String:message[])
+{
+	for (int client = 1; client <= MaxClients; ++client) {
+		if (!IsValidClient(client) || !GetAdminFlag(GetUserAdmin(client), Admin_Generic))
+		{
 			continue;
+		}
 		
-		PrintToChat(i, message);
+		PrintToChat(client, message);
 	}
 }
