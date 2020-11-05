@@ -361,7 +361,7 @@ void CapInterp(const int client, const int capType)
 
 bool IsValidClient(const int client)
 {
-	return (client > 0 || client <= MaxClients) && (IsClientInGame(client));
+	return client > 0 && client <= MaxClients && IsClientInGame(client);
 }
 
 void PrintToAdminsChat(const char[] message)
