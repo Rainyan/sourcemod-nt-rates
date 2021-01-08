@@ -4,6 +4,7 @@ Neotokyo SM plugin for improved interp and rate control.
 
 This plugin will detect and correct clients running invalid rate values (non-numeric rates, etc). It also allows setting a cl_interp range similar to *sv_minrate*/*sv_maxrate* with the plugin cvars *sm_rates_min_interp*/*sm_rates_max_interp*.
 
+Example of invalid rates detection (the output verbosity can be controlled with *sm_rates_verbosity*):
 ![Plugin detection example](https://github.com/Rainyan/sourcemod-nt-rates/raw/master/promo/example.png "Plugin detection example")
 
 ## Compile requirements
