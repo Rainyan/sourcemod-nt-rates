@@ -85,6 +85,24 @@ public void OnPluginStart()
     else if (MIN_INTERP_MAX_BOUND > MAX_INTERP_MAX_BOUND) {
         SetFailState("MIN_INTERP_MAX_BOUND (%f) > MAX_INTERP_MAX_BOUND (%f)", MIN_INTERP_MAX_BOUND, MAX_INTERP_MAX_BOUND);
     }
+	// Make sure the default value of min and max cvars equals the appropriate constant define.
+    else {
+        decl String:defaultVal[9];
+        if (hCvar_MinInterp.GetDefault(defaultVal, sizeof(defaultVal)) < 1) {
+            SetFailState("Failed to get hCvar_MinInterp default value.");
+        }
+        else if (StringToFloat(defaultVal) != MIN_INTERP_MIN_BOUND) {
+            SetFailState("hCvar_MinInterp.GetDefault (\"%s\") != MIN_INTERP_MIN_BOUND (%f)",
+                defaultVal, MIN_INTERP_MIN_BOUND);
+        }
+        else if (hCvar_MaxInterp.GetDefault(defaultVal, sizeof(defaultVal)) < 1) {
+            SetFailState("Failed to get hCvar_MaxInterp default value.");
+        }
+        else if (StringToFloat(defaultVal) != MIN_INTERP_MIN_BOUND) {
+            SetFailState("hCvar_MaxInterp.GetDefault (\"%s\") != MIN_INTERP_MIN_BOUND (%f)",
+                defaultVal, MIN_INTERP_MIN_BOUND);
+        }
+    }
 
     hCvar_Rate        = FindConVar("rate");
     hCvar_CmdRate     = FindConVar("cl_cmdrate");
