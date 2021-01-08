@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.5"
+#define PLUGIN_VERSION "0.2.6"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -305,6 +305,7 @@ void RestoreRate(const int client, const RATE_TYPE rateType, const char[] offend
     NotifyRestore(client, rateType, cvarName, offendingValue);
 }
 
+// Assumes input is always a valid client.
 void CapInterp(const int client, const RATE_LIMIT_TYPE capType, const char[] offendingValue)
 {
     decl String:restoredInterp[MAX_RATE_LENGTH];
@@ -313,14 +314,10 @@ void CapInterp(const int client, const RATE_LIMIT_TYPE capType, const char[] off
     NotifyRestore(client, RATE_TYPE_INTERP, "cl_interp", offendingValue, true, capType);
 }
 
-bool IsValidClient(const int client)
-{
-    return client > 0 && client <= MaxClients && IsClientInGame(client);
-}
-
+// Assumes input is always a valid client.
 void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rate_type_name, const char[] offendingValue, const bool is_limit_type = false, const RATE_LIMIT_TYPE limit_type = RATE_LIMIT_TYPE_MIN)
 {
-    if (hCvar_Verbosity.IntValue == VERBOSITY_NONE || !IsValidClient(client)) {
+    if (hCvar_Verbosity.IntValue == VERBOSITY_NONE) {
         return;
     }
     float restored_value;
@@ -380,40 +377,22 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
     }
     decl String:clientName[MAX_NAME_LENGTH];
     GetClientName(client, clientName, sizeof(clientName));
-    switch (hCvar_Verbosity.IntValue) {
-        case VERBOSITY_PUBLIC:
-        {
-            PrintToChatAndConsoleAll("%s Player \"%s\" had %s value of \"%s\" (\"%s\") %s",  
-                g_sTag,
-                clientName,
-                is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "smaller" : "larger") : "invalid",
-                rate_type_name,
-                offendingValue,
-                is_limit_type ? "than allowed." : ".");
-
-            PrintToChatAndConsoleAll("%s The value has been %s to the %s of \"%f\".",
-                g_sTag,
-                is_limit_type ? "capped" : "restored",
-                is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
-                restored_value);
-        }
-        case VERBOSITY_ADMIN_ONLY:
-        {
-            PrintToAdmins(true, true, "%s Player \"%s\" had %s value of \"%s\" (\"%s\") %s",
-                g_sTag,
-                clientName,
-                is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "smaller" : "larger") : "invalid",
-                rate_type_name,
-                offendingValue,
-                is_limit_type ? "than allowed." : ".");
-
-            PrintToAdmins(true, true, "%s The value has been %s to the %s of \"%f\".",
-                g_sTag,
-                is_limit_type ? "capped" : "restored",
-                is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
-                restored_value);
-        }
-    }
+    
+    PrintToChatAndConsoleAll(
+        (hCvar_Verbosity.IntValue == VERBOSITY_ADMIN_ONLY),
+        "%s Player \"%s\" had %s value of \"%s\" (\"%s\") %s",
+        g_sTag,
+        clientName,
+        is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "smaller" : "larger") : "invalid",
+        rate_type_name,
+        offendingValue,
+        is_limit_type ? "than allowed." : ".");
+    
+    PrintToChatAndConsoleAll(
+        (hCvar_Verbosity.IntValue == VERBOSITY_ADMIN_ONLY),
+        is_limit_type ? "capped" : "restored",
+        is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
+        restored_value);
 
     if (hCvar_LogToFile.BoolValue) {
         char clientAuthId[32];
@@ -427,36 +406,22 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
     }
 }
 
-stock void PrintToChatAndConsoleAll(const char[] message, any ...)
+stock void PrintToChatAndConsoleAll(const bool onlyToAdmins, const char[] message, any ...)
 {
     decl String:formatMsg[MAX_MESSAGE_LENGTH];
-    VFormat(formatMsg, sizeof(formatMsg), message, 2);
+    VFormat(formatMsg, sizeof(formatMsg), message, 3);
 
     for (int client = 1; client <= MaxClients; ++client) {
-        if (!IsValidClient(client)) {
+        if (!IsClientInGame(client)) {
             continue;
         }
+
+        if (!IsFakeClient(client) && (onlyToAdmins && !IsAdmin(client))) {
+            continue;
+        }
+
         PrintToChat(client, formatMsg);
         PrintToConsole(client, formatMsg);
-    }
-}
-
-stock void PrintToAdmins(const bool toChat = true, const bool toConsole = false, const char[] message, any ...)
-{
-    decl String:formatMsg[MAX_MESSAGE_LENGTH];
-    VFormat(formatMsg, sizeof(formatMsg), message, 4);
-
-    for (int client = 1; client <= MaxClients; ++client) {
-        if (!IsValidClient(client) || !IsAdmin(client)) {
-            continue;
-        }
-
-        if (toChat) {
-            PrintToChat(client, formatMsg);
-        }
-        if (toConsole) {
-            PrintToConsole(client, formatMsg);
-        }
     }
 }
 
@@ -467,12 +432,14 @@ stock float Clamp(const float value, const float min, const float max)
 
 stock bool IsAdmin(const int client)
 {
-    if (!IsValidClient(client) || !IsClientAuthorized(client)) {
+    if (!IsClientAuthorized(client)) {
         return false;
     }
+
     AdminId adminId = GetUserAdmin(client);
     if (adminId == INVALID_ADMIN_ID) {
         return false;
     }
+
     return GetAdminFlag(adminId, Admin_Generic);
 }
