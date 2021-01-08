@@ -98,9 +98,9 @@ public void OnPluginStart()
         else if (hCvar_MaxInterp.GetDefault(defaultVal, sizeof(defaultVal)) < 1) {
             SetFailState("Failed to get hCvar_MaxInterp default value.");
         }
-        else if (StringToFloat(defaultVal) != MIN_INTERP_MIN_BOUND) {
-            SetFailState("hCvar_MaxInterp.GetDefault (\"%s\") != MIN_INTERP_MIN_BOUND (%f)",
-                defaultVal, MIN_INTERP_MIN_BOUND);
+        else if (StringToFloat(defaultVal) != MAX_INTERP_MAX_BOUND) {
+            SetFailState("hCvar_MaxInterp.GetDefault (\"%s\") != MAX_INTERP_MAX_BOUND (%f)",
+                defaultVal, MAX_INTERP_MAX_BOUND);
         }
     }
 
