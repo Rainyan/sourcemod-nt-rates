@@ -2,34 +2,41 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.1.6"
+#define PLUGIN_VERSION "0.2"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
 
-#define NEO_MAXPLAYERS 32
+#define NEO_MAX_PLAYERS 32
+
+#define MAX_RATE_CVAR_NAME_LENGTH (14 + 1) // "cl_interpolate" + 0
 
 Handle hTimer_RateCheck = null;
 
 ConVar hCvar_Interval, hCvar_DefaultRate, hCvar_DefaultCmdRate,
 	hCvar_DefaultUpdateRate, hCvar_DefaultInterp, hCvar_MinInterp,
-	hCvar_MaxInterp, hCvar_ForceInterp, hCvar_Verbosity;
+	hCvar_MaxInterp, hCvar_ForceInterp, hCvar_Verbosity,
+	// native cvars
+	hCvar_Rate, hCvar_CmdRate, hCvar_UpdateRate,
+	hCvar_Interp, hCvar_Interpolate;
 
-new const String:g_tag[] = "[NT RATES]";
+static const String:g_sTag[] = "[NT RATES]";
 
-bool wasInterpFixedThisPass[NEO_MAXPLAYERS + 1];
+bool g_bWasInterpFixedThisPass[NEO_MAX_PLAYERS + 1];
 
-enum {
-	TYPE_RATE = 0,
-	TYPE_CMDRATE,
-	TYPE_UPDATERATE,
-	TYPE_INTERP,
-	TYPE_INTERP_ENABLED
+enum RATE_TYPE {
+	RATE_TYPE_RATE = 0,
+	RATE_TYPE_CMDRATE,
+	RATE_TYPE_UPDATERATE,
+	RATE_TYPE_INTERP,
+	RATE_TYPE_INTERP_ENABLED,
+	
+	NUM_RATE_TYPES
 };
 
-enum {
-	TYPE_MIN = 0,
-	TYPE_MAX
+enum RATE_LIMIT_TYPE {
+	RATE_LIMIT_TYPE_MIN = 0,
+	RATE_LIMIT_TYPE_MAX
 };
 
 enum {
@@ -37,39 +44,60 @@ enum {
 	VERBOSITY_PUBLIC,
 	VERBOSITY_ADMIN_ONLY,
 
-	VERBOSITY_MAX_VALUE = VERBOSITY_ADMIN_ONLY
+	NUM_VERBOSITY_TYPES,
+	VERBOSITY_MAX_VALUE = NUM_VERBOSITY_TYPES - 1
 };
 
 public Plugin myinfo = {
 	name			= "NT Rates",
 	description	= "Improved interp and rate control.",
 	author			= "Rain",
-	version			= PLUGIN_VERSION,
+	version		= PLUGIN_VERSION,
 	url				= "https://github.com/Rainyan/sourcemod-nt-rates"
 };
 
 public void OnPluginStart()
 {
-	hCvar_Interval				= CreateConVar("sm_rates_interval", "1.0", "Interval in seconds to check players' rate values.", _, true, 1.0);
+	hCvar_Interval				= CreateConVar("sm_rates_interval", "1.0", "Interval (in seconds) to check players' rate values.", _, true, 1.0, true, 60.0);
 	
-	hCvar_DefaultRate			= CreateConVar("sm_rates_default_rate", "128000", "Default rate value.", _, true, 20000.0, true, 128000.0);
-	hCvar_DefaultCmdRate		= CreateConVar("sm_rates_default_cmdrate", "66", "Default cl_cmdrate value.", _, true, 60.0, true, 66.0);
-	hCvar_DefaultUpdateRate	= CreateConVar("sm_rates_default_updaterate", "66", "Default cl_updaterate value.", _, true, 60.0, true, 66.0);
-	hCvar_DefaultInterp			= CreateConVar("sm_rates_default_interp", "0.02", "Default cl_interp value.", _, true, 0.0, true, 0.1);
+	hCvar_DefaultRate				= CreateConVar("sm_rates_default_rate", "128000", "Default rate value.", _, true, 5000.0, true, 786432.0);
+	hCvar_DefaultCmdRate			= CreateConVar("sm_rates_default_cmdrate", "66", "Default cl_cmdrate value.", _, true, 20.0, true, 128.0);
+	hCvar_DefaultUpdateRate		= CreateConVar("sm_rates_default_updaterate", "66", "Default cl_updaterate value.", _, true, 20.0, true, 128.0);
+	hCvar_DefaultInterp			= CreateConVar("sm_rates_default_interp", "0.030303", "Default cl_interp value.", _, true, 0.0, true, 0.1);
 	
-	hCvar_MinInterp				= CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, 0.0, true, 0.02);
-	hCvar_MaxInterp				= CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, 0.0, true, 0.1);
-	hCvar_ForceInterp			= CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp. This should be enabled.", _, true, 0.0, true, 1.0);
+	hCvar_MinInterp				= CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, 0.0, true, 0.0303030);
+	hCvar_MaxInterp				= CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, 0.0151515, true, 0.1);
+	hCvar_ForceInterp				= CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp.", _, true, 0.0, true, 1.0);
 	
 	hCvar_Verbosity				= CreateConVar("sm_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). \
-1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).",
-		_, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
+1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).", _, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
+
+	hCvar_Rate = FindConVar("rate");
+	hCvar_CmdRate = FindConVar("cl_cmdrate");
+	hCvar_UpdateRate = FindConVar("cl_updaterate");
+	hCvar_Interp = FindConVar("cl_interp");
+	hCvar_Interpolate = FindConVar("cl_interpolate");
+	if (hCvar_Rate == null) {
+		SetFailState("Failed to find native cvar \"rate\"");
+	}
+	else if (hCvar_CmdRate == null) {
+		SetFailState("Failed to find native cvar \"cl_cmdrate\"");
+	}
+	else if (hCvar_UpdateRate == null) {
+		SetFailState("Failed to find native cvar \"cl_updaterate\"");
+	}
+	else if (hCvar_Interp == null) {
+		SetFailState("Failed to find native cvar \"cl_interp\"");
+	}
+	else if (hCvar_Interpolate == null) {
+		SetFailState("Failed to find native cvar \"cl_interpolate\"");
+	}
+
+	hTimer_RateCheck = CreateTimer(hCvar_Interval.FloatValue , Timer_RateCheck, _, TIMER_REPEAT);
 }
 
 public void OnMapStart()
 {
-	hTimer_RateCheck = CreateTimer(hCvar_Interval.FloatValue , Timer_RateCheck, _, TIMER_REPEAT);
-
 	HookConVarChange(hCvar_Interval, CvarChanged_Interval);
 }
 
@@ -86,12 +114,12 @@ void CvarChanged_Interval(ConVar convar, const char[] oldValue, const char[] new
 public Action Timer_RateCheck(Handle timer)
 {
 	for (int client = 1; client <= MaxClients; ++client) {
-		if (!IsValidClient(client) || IsFakeClient(client))
+		if (!IsClientInGame(client) || IsFakeClient(client))
 		{
 			continue;
 		}
 		
-		wasInterpFixedThisPass[client] = false;
+		g_bWasInterpFixedThisPass[client] = false;
 		
 		ValidateRates(client);
 	}
@@ -106,263 +134,152 @@ void ValidateRates(const int client)
 		return;
 	}
 	
-	decl String:rate			[MAX_RATE_LENGTH];
+	decl String:rate				[MAX_RATE_LENGTH];
 	decl String:cmdRate			[MAX_RATE_LENGTH];
 	decl String:updateRate		[MAX_RATE_LENGTH];
 	decl String:interp			[MAX_RATE_LENGTH];
 	decl String:interpEnabled	[MAX_RATE_LENGTH];
 	
-	GetClientInfo(client, "rate", rate, MAX_RATE_LENGTH);
-	GetClientInfo(client, "cl_cmdrate", cmdRate, MAX_RATE_LENGTH);
-	GetClientInfo(client, "cl_updaterate", updateRate, MAX_RATE_LENGTH);
-	GetClientInfo(client, "cl_interp", interp, MAX_RATE_LENGTH);
-	GetClientInfo(client, "cl_interpolate", interpEnabled, MAX_RATE_LENGTH);
+	GetClientInfo(client, "rate",				rate,				MAX_RATE_LENGTH);
+	GetClientInfo(client, "cl_cmdrate",		cmdRate,			MAX_RATE_LENGTH);
+	GetClientInfo(client, "cl_updaterate",		updateRate,		MAX_RATE_LENGTH);
+	GetClientInfo(client, "cl_interp",			interp,			MAX_RATE_LENGTH);
+	GetClientInfo(client, "cl_interpolate",	interpEnabled,	MAX_RATE_LENGTH);
 	
-	int i;
+	int rate_len = strlen(rate);
+	int cmdRate_len = strlen(cmdRate);
+	int updateRate_len = strlen(updateRate);
+	int interp_len = strlen(interp);
+	
+	int i = 0;
 	// Check rate
-	for (i = 0; i < sizeof(rate); ++i) {
-		if (strlen(rate[i]) < 1 && i > 0) // End of string
-			break;
-		
+	for (; i < MAX_RATE_LENGTH && i < rate_len; ++i) {
 		if (!IsCharNumeric(rate[i])) {
-			RestoreRate(client, TYPE_RATE);
+			RestoreRate(client, RATE_TYPE_RATE);
 			break;
 		}
 	}
 	
 	// Check cl_cmdrate validity
-	for (i = 0; i < sizeof(cmdRate); ++i) {
-		if (strlen(cmdRate[i]) < 1 && i > 0) // End of string
-			break;
-		
+	for (i = 0; i < MAX_RATE_LENGTH && i < cmdRate_len; ++i) {
 		if (!IsCharNumeric(cmdRate[i])) {
-			RestoreRate(client, TYPE_CMDRATE);
+			RestoreRate(client, RATE_TYPE_CMDRATE);
 			break;
 		}
 	}
 	
 	// Check cl_updaterate validity
-	for (i = 0; i < sizeof(updateRate); ++i) {
-		if (strlen(updateRate[i]) < 1) // End of string
-			break;
-		
-		if ( !IsCharNumeric(updateRate[i]) ) {
-			RestoreRate(client, TYPE_UPDATERATE);
+	for (i = 0; i < MAX_RATE_LENGTH && i < updateRate_len; ++i) {
+		if (!IsCharNumeric(updateRate[i])) {
+			RestoreRate(client, RATE_TYPE_UPDATERATE);
 			break;
 		}
 	}
 	
 	if (hCvar_ForceInterp.BoolValue) {
-		// Make sure client has interp enabled
+		// Make sure client has cl_interpolate enabled
 		float flInterpEnabled = StringToFloat(interpEnabled);
-		if (flInterpEnabled != 1)
-			RestoreRate(client, TYPE_INTERP_ENABLED);
+		if (flInterpEnabled != 1) {
+			RestoreRate(client, RATE_TYPE_INTERP_ENABLED);
+		}
 	}
 	
 	// Check cl_interp validity
 	int decimalPoints;
-	bool wasDecimalLastChar;
-	for (i = 0; i < sizeof(interp); ++i) {
-		if (strlen(interp[i]) < 1 && i > 0) { // End of string
+	for (i = 0; i < MAX_RATE_LENGTH && i < interp_len; ++i) {
+		// Decimal points are allowed in cl_interp
+		if (interp[i] == '.') {
 			// Interp ended in a decimal point instead of number (eg 0.)
 			// This may be ok, but we're fixing it jic
-			if (wasDecimalLastChar) {
-				RestoreRate(client, TYPE_INTERP);
-			}
-			
-			break;
-		}
-		
-		// Decimal points are allowed in cl_interp
-		if (StrContains(interp[i], ".") != -1) {
-			if (decimalPoints > 0) { // There's more than 1 decimal point, something is wrong with interp
-				// Hackhack: Dot indexing has something funky going on, just ignoring the dot from last array index here
-				if (wasDecimalLastChar) {
-					wasDecimalLastChar = false;
-					continue;
-				}
-				
-				RestoreRate(client, TYPE_INTERP);
+			if (i + 1 == interp_len) {
+				RestoreRate(client, RATE_TYPE_INTERP);
 				break;
 			}
-			wasDecimalLastChar = true;
-			++decimalPoints;
 			
-			continue;
+			if (++decimalPoints > 1) { // There's more than 1 decimal point, something is wrong with interp
+				RestoreRate(client, RATE_TYPE_INTERP);
+				break;
+			}
 		}
-		
 		else if (!IsCharNumeric(interp[i])) {
-			RestoreRate(client, TYPE_INTERP);
+			RestoreRate(client, RATE_TYPE_INTERP);
 			break;
 		}
-		
-		wasDecimalLastChar = false;
 	}
 	
 	// This player's cl_interp was just reset to defaults this pass.
 	// Stop here, so we don't nag about incorrect values again needlessly.
-	if (wasInterpFixedThisPass[client])
+	if (g_bWasInterpFixedThisPass[client]) {
 		return;
+	}
 	
 	float flInterp = StringToFloat(interp);
 	
-	if (flInterp < hCvar_MinInterp.FloatValue)
-		CapInterp(client, TYPE_MIN);
-	
-	else if (flInterp > hCvar_MaxInterp.FloatValue)
-		CapInterp(client, TYPE_MAX);
+	if (flInterp < hCvar_MinInterp.FloatValue) {
+		CapInterp(client, RATE_LIMIT_TYPE_MIN);
+	}
+	else if (flInterp > hCvar_MaxInterp.FloatValue) {
+		CapInterp(client, RATE_LIMIT_TYPE_MAX);
+	}
 }
 
-void RestoreRate(const int client, const int rateType)
+void RestoreRate(const int client, const RATE_TYPE rateType)
 {
 	if (!IsValidClient(client)) {
 		return;
 	}
 
-	int verbosity = hCvar_Verbosity.IntValue;
-
-	decl String:msg[MAX_MESSAGE_LENGTH];
-	decl String:clientName[MAX_NAME_LENGTH];
-
-	if (verbosity > VERBOSITY_NONE) {
-		GetClientName(client, clientName, sizeof(clientName));
-	}
+	decl String:defaultValue[MAX_RATE_LENGTH];
+	decl String:cvarName[MAX_RATE_CVAR_NAME_LENGTH];
 
 	switch (rateType)
 	{
-		case TYPE_RATE:
+		case RATE_TYPE_RATE:
 		{
-			decl String:defaultRate[MAX_RATE_LENGTH];
-			GetConVarString(hCvar_DefaultRate, defaultRate, sizeof(defaultRate));
-			
-			ClientCommand(client, "rate %s", defaultRate);
-			
-			if (verbosity > VERBOSITY_NONE)
-			{
-				Format(msg, sizeof(msg), "%s Player \"%s\" had an invalid rate. Value has been reset to \"%s\"",
-					g_tag, clientName, defaultRate);
-			}
+			hCvar_DefaultRate.GetString(defaultValue, sizeof(defaultValue));
+			hCvar_Rate.GetName(cvarName, sizeof(cvarName));
 		}
 		
-		case TYPE_CMDRATE:
+		case RATE_TYPE_CMDRATE:
 		{
-			decl String:defaultCmdRate[MAX_RATE_LENGTH];
-			GetConVarString(hCvar_DefaultCmdRate, defaultCmdRate, sizeof(defaultCmdRate));
-			
-			ClientCommand(client, "cl_cmdrate %s", defaultCmdRate);
-			
-			if (verbosity > VERBOSITY_NONE)
-			{
-				Format(msg, sizeof(msg), "%s Player \"%s\" had an invalid cl_cmdrate. Value has been reset to \"%s\"",
-					g_tag, clientName, defaultCmdRate);
-			}
+			hCvar_DefaultCmdRate.GetString(defaultValue, sizeof(defaultValue));
+			hCvar_CmdRate.GetName(cvarName, sizeof(cvarName));
 		}
 		
-		case TYPE_UPDATERATE:
+		case RATE_TYPE_UPDATERATE:
 		{
-			decl String:defaultUpdateRate[MAX_RATE_LENGTH];
-			GetConVarString(hCvar_DefaultUpdateRate, defaultUpdateRate, sizeof(defaultUpdateRate));
-			
-			ClientCommand(client, "cl_updaterate %s", defaultUpdateRate);
-			
-			if (verbosity > VERBOSITY_NONE)
-			{
-				Format(msg, sizeof(msg), "%s Player \"%s\" had an invalid cl_updaterate. Value has been reset to \"%s\"",
-					g_tag, clientName, defaultUpdateRate);
-			}
+			hCvar_DefaultUpdateRate.GetString(defaultValue, sizeof(defaultValue));
+			hCvar_UpdateRate.GetName(cvarName, sizeof(cvarName));
 		}
 		
-		case TYPE_INTERP:
+		case RATE_TYPE_INTERP:
 		{
-			wasInterpFixedThisPass[client] = true;
-			
-			decl String:defaultInterp[MAX_RATE_LENGTH];
-			GetConVarString(hCvar_DefaultInterp, defaultInterp, sizeof(defaultInterp));
-			
-			ClientCommand(client, "cl_interp %s", defaultInterp);
-			
-			if (verbosity > 0)
-			{
-				Format(msg, sizeof(msg), "%s Player \"%s\" had an invalid cl_interp. Value has been reset to \"%s\"",
-					g_tag, clientName, defaultInterp);
-			}
+			hCvar_DefaultInterp.GetString(defaultValue, sizeof(defaultValue));
+			hCvar_Interp.GetName(cvarName, sizeof(cvarName));
 		}
 		
-		case TYPE_INTERP_ENABLED:
+		case RATE_TYPE_INTERP_ENABLED:
 		{
-			ClientCommand(client, "cl_interpolate 1");
-			
-			if (verbosity > 0)
-			{
-				Format(msg, sizeof(msg), "%s Player \"%s\" had interpolation disabled. This has been reverted.",
-					g_tag, clientName);
-			}
+			strcopy(defaultValue, sizeof(defaultValue), "1");
+			hCvar_Interpolate.GetName(cvarName, sizeof(cvarName));
 		}
 	}
 	
-	if (verbosity == VERBOSITY_PUBLIC)
-	{
-		PrintToChatAll(msg);
-	}
-	else if (verbosity == VERBOSITY_ADMIN_ONLY)
-	{
-		PrintToAdminsChat(msg);
-	}
+	ClientCommand(client, "%s %s", cvarName, defaultValue);
+	NotifyRestore(client, rateType, cvarName);
 }
 
-void CapInterp(const int client, const int capType)
+void CapInterp(const int client, const RATE_LIMIT_TYPE capType)
 {
-	if (!IsValidClient(client))
+	if (!IsValidClient(client)) {
 		return;
-	
-	int verbosity = hCvar_Verbosity.IntValue;
-	
-	decl String:msg[MAX_MESSAGE_LENGTH];
-	decl String:clientName[MAX_NAME_LENGTH];
-	
-	if (verbosity > VERBOSITY_NONE) {
-		GetClientName(client, clientName, sizeof(clientName));
 	}
 	
-	switch (capType)
-	{
-		case TYPE_MIN:
-		{
-			decl String:minInterp[MAX_RATE_LENGTH];
-			GetConVarString(hCvar_MinInterp, minInterp, sizeof(minInterp));
-			
-			ClientCommand(client, "cl_interp %s", minInterp);
-			
-			if (verbosity > VERBOSITY_NONE)
-			{
-				Format(msg, sizeof(msg), "%s Player \"%s\" had smaller cl_interp than allowed. Value has been capped to the minimum \"%s\"",
-					g_tag, clientName, minInterp);
-			}
-		}
-		
-		case TYPE_MAX:
-		{
-			decl String:maxInterp[MAX_RATE_LENGTH];
-			GetConVarString(hCvar_MaxInterp, maxInterp, sizeof(maxInterp));
-			
-			ClientCommand(client, "cl_interp %s", maxInterp);
-			
-			if (verbosity > VERBOSITY_NONE)
-			{
-				Format(msg, sizeof(msg), "%s Player \"%s\" had bigger cl_interp than allowed. Value has been capped to the maximum \"%s\"",
-					g_tag, clientName, maxInterp);
-			}
-		}
-	}
+	decl String:restoredInterp[MAX_RATE_LENGTH];
+	GetConVarString((capType == RATE_LIMIT_TYPE_MIN) ? hCvar_MinInterp : hCvar_MaxInterp, restoredInterp, sizeof(restoredInterp));
+	ClientCommand(client, "cl_interp %s", restoredInterp);
 	
-	if (verbosity == VERBOSITY_PUBLIC)
-	{
-		PrintToChatAll(msg);
-	}
-	else if (verbosity == VERBOSITY_ADMIN_ONLY)
-	{
-		PrintToAdminsChat(msg);
-	}
+	NotifyRestore(client, RATE_TYPE_INTERP, "cl_interp", true, capType);
 }
 
 bool IsValidClient(const int client)
@@ -370,19 +287,129 @@ bool IsValidClient(const int client)
 	return client > 0 && client <= MaxClients && IsClientInGame(client);
 }
 
-void PrintToAdminsChat(const char[] message)
+void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rate_type_name, const bool is_limit_type = false, const RATE_LIMIT_TYPE limit_type = RATE_LIMIT_TYPE_MIN)
 {
-	for (int client = 1; client <= MaxClients; ++client) {
-		if (!IsValidClient(client) || !GetAdminFlag(GetUserAdmin(client), Admin_Generic))
+	if (hCvar_Verbosity.IntValue == VERBOSITY_NONE || !IsValidClient(client)) {
+		return;
+	}
+	
+	float restored_value;
+	if (!is_limit_type) {
+		switch (rate_type)
 		{
-			continue;
+			case RATE_TYPE_RATE:
+			{
+				restored_value = hCvar_DefaultRate.FloatValue;
+			}
+			case RATE_TYPE_CMDRATE:
+			{
+				restored_value = hCvar_DefaultCmdRate.FloatValue;
+			}
+			case RATE_TYPE_UPDATERATE:
+			{
+				restored_value = hCvar_DefaultUpdateRate.FloatValue;
+			}
+			case RATE_TYPE_INTERP:
+			{
+				restored_value = hCvar_DefaultInterp.FloatValue;
+			}
+			case RATE_TYPE_INTERP_ENABLED:
+			{
+				restored_value = hCvar_ForceInterp.FloatValue;
+			}
+			default:
+			{
+				SetFailState("Unsupported rate type: %d (is_limit_type: %d)", rate_type, is_limit_type);
+			}
 		}
-		
-		PrintToChat(client, message);
+	}
+	else {
+		switch (rate_type)
+		{
+			case RATE_TYPE_RATE:
+			{
+				hCvar_Rate.GetBounds((limit_type == RATE_LIMIT_TYPE_MIN) ? ConVarBound_Lower : ConVarBound_Upper, restored_value);
+			}
+			case RATE_TYPE_CMDRATE:
+			{
+				hCvar_CmdRate.GetBounds((limit_type == RATE_LIMIT_TYPE_MIN) ? ConVarBound_Lower : ConVarBound_Upper, restored_value);
+			}
+			case RATE_TYPE_UPDATERATE:
+			{
+				hCvar_UpdateRate.GetBounds((limit_type == RATE_LIMIT_TYPE_MIN) ? ConVarBound_Lower : ConVarBound_Upper, restored_value);
+			}
+			default:
+			{
+				SetFailState("Unsupported rate type: %d (is_limit_type: %d)", rate_type, is_limit_type);
+			}
+		}
+	}
+	
+	decl String:clientName[MAX_NAME_LENGTH];
+	GetClientName(client, clientName, sizeof(clientName));
+	
+	switch (hCvar_Verbosity.IntValue) {
+		case VERBOSITY_PUBLIC:
+		{
+			PrintToChatAll("%s Player \"%s\" had %s value of \"%s\" than allowed. The value has been %s to the %s of \"%f\".",
+				g_sTag,
+				clientName,
+				is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "smaller" : "larger") : "invalid",
+				rate_type_name,
+				is_limit_type ? "capped" : "restored",
+				is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
+				restored_value);
+		}
+		case VERBOSITY_ADMIN_ONLY:
+		{
+			PrintToAdmins(true, true, "%s Player \"%s\" had %s value of \"%s\" than allowed. The value has been %s to the %s of \"%f\".",
+				g_sTag,
+				clientName,
+				is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "smaller" : "larger") : "invalid",
+				rate_type_name,
+				is_limit_type ? "capped" : "restored",
+				is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
+				restored_value);
+		}
 	}
 }
 
-float Clamp(const float value, const float min, const float max)
+stock void PrintToAdmins(const bool toChat = true, const bool toConsole = false, const char[] message, any ...)
+{
+	decl String:formatMsg[MAX_MESSAGE_LENGTH];
+	VFormat(formatMsg, sizeof(formatMsg), message, 4);
+
+	for (int client = 1; client <= MaxClients; ++client) {
+		if (!IsValidClient(client) || !IsAdmin(client)) {
+			continue;
+		}
+
+		if (toChat) {
+			PrintToChat(client, formatMsg);
+		}
+		
+		if (toConsole) {
+			PrintToConsole(client, formatMsg);
+		}
+	}
+}
+
+stock float Clamp(const float value, const float min, const float max)
 {
 	return value < min ? min : value > max ? max : value;
+}
+
+stock bool IsAdmin(const int client)
+{
+	if (!IsValidClient(client) || !IsClientAuthorized(client)) {
+		return false;
+	}
+	
+	AdminId adminId = GetUserAdmin(client);
+	
+	if (adminId == INVALID_ADMIN_ID) {
+		return false;
+	}
+	
+	return GetAdminFlag(adminId, Admin_Generic);
 }
