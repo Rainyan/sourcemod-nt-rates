@@ -430,6 +430,7 @@ stock float Clamp(const float value, const float min, const float max)
     return value < min ? min : value > max ? max : value;
 }
 
+// Assumes input is always a valid client.
 stock bool IsAdmin(const int client)
 {
     if (!IsClientAuthorized(client)) {
