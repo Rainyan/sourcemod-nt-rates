@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.1"
+#define PLUGIN_VERSION "0.2.2"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -185,11 +185,14 @@ void ValidateRates(const int client)
     decl String:updateRate          [MAX_RATE_LENGTH];
     decl String:interp              [MAX_RATE_LENGTH];
     decl String:interpEnabled       [MAX_RATE_LENGTH];
-    GetClientInfo(client, "rate",              rate,             MAX_RATE_LENGTH);
-    GetClientInfo(client, "cl_cmdrate",        cmdRate,          MAX_RATE_LENGTH);
-    GetClientInfo(client, "cl_updaterate",     updateRate,       MAX_RATE_LENGTH);
-    GetClientInfo(client, "cl_interp",         interp,           MAX_RATE_LENGTH);
-    GetClientInfo(client, "cl_interpolate",    interpEnabled,    MAX_RATE_LENGTH);
+
+    // This should never fail, but playing it safe.
+    if (!GetClientInfo(client, "rate",              rate,             MAX_RATE_LENGTH)) { return; }
+    if (!GetClientInfo(client, "cl_cmdrate",        cmdRate,          MAX_RATE_LENGTH)) { return; }
+    if (!GetClientInfo(client, "cl_updaterate",     updateRate,       MAX_RATE_LENGTH)) { return; }
+    if (!GetClientInfo(client, "cl_interp",         interp,           MAX_RATE_LENGTH)) { return; }
+    if (!GetClientInfo(client, "cl_interpolate",    interpEnabled,    MAX_RATE_LENGTH)) { return; }
+
     int rate_len       = strlen(rate);
     int cmdRate_len    = strlen(cmdRate);
     int updateRate_len = strlen(updateRate);
