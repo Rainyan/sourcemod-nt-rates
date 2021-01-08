@@ -12,7 +12,7 @@
 
 #define MAX_RATE_CVAR_NAME_LENGTH (14 + 1) // "cl_interpolate" + 0
 
-// "cl_interpolate" is already sv_cheats protected in NT, but you can flip this bool to enforce it anyway.
+// "cl_interpolate" is already sv_cheats protected in NT, but you can enable this compile flag to enforce its check anyway.
 #define TEST_CL_INTERPOLATE false
 
 Handle hTimer_RateCheck = null;
