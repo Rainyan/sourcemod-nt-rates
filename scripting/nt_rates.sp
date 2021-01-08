@@ -62,21 +62,21 @@ public Plugin myinfo = {
 #define MAX_INTERP_MIN_BOUND 0.0151515
 #define MAX_INTERP_MAX_BOUND 0.1
 
-public void OnPluginStart()
 {
+public void OnPluginStart()
     CreateConVar("sm_rates_version", PLUGIN_VERSION, "NT Rates plugin version.", FCVAR_DONTRECORD);
 
     hCvar_Interval                = CreateConVar("sm_rates_interval", "1.0", "Interval (in seconds) to check players' rate values.", _, true, 1.0, true, 60.0);
-    hCvar_DefaultRate             = CreateConVar("sm_rates_default_rate", "128000", "Default rate value.", _, true, 5000.0, true, 786432.0);
-    hCvar_DefaultCmdRate          = CreateConVar("sm_rates_default_cmdrate", "66", "Default cl_cmdrate value.", _, true, 20.0, true, 128.0);
-    hCvar_DefaultUpdateRate       = CreateConVar("sm_rates_default_updaterate", "66", "Default cl_updaterate value.", _, true, 20.0, true, 128.0);
-    hCvar_DefaultInterp           = CreateConVar("sm_rates_default_interp", "0.030303", "Default cl_interp value.", _, true, 0.0, true, 0.1);
+    hCvar_DefaultRate             = CreateConVar("sm_rates_default_rate", "128000", "Default rate value when restoring an invalid value.", _, true, 5000.0, true, 786432.0);
+    hCvar_DefaultCmdRate          = CreateConVar("sm_rates_default_cmdrate", "66", "Default cl_cmdrate value when restoring an invalid value.", _, true, 20.0, true, 128.0);
+    hCvar_DefaultUpdateRate       = CreateConVar("sm_rates_default_updaterate", "66", "Default cl_updaterate value when restoring an invalid value.", _, true, 20.0, true, 128.0);
+    hCvar_DefaultInterp           = CreateConVar("sm_rates_default_interp", "0.030303", "Default cl_interp value when restoring an invalid value.", _, true, 0.0, true, 0.1);
     hCvar_MinInterp               = CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, MIN_INTERP_MIN_BOUND, true, MIN_INTERP_MAX_BOUND);
     hCvar_MaxInterp               = CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, MAX_INTERP_MIN_BOUND, true, MAX_INTERP_MAX_BOUND);
-    hCvar_ForceInterp             = CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp.", _, true, 0.0, true, 1.0);
-    hCvar_Verbosity               = CreateConVar("sm_rates_verbosity", "2", "0 - Don't publicly announce bad values. \
+    hCvar_ForceInterp             = CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside cl_interpolate.", _, true, 0.0, true, 1.0);
+    hCvar_Verbosity               = CreateConVar("sm_rates_verbosity", "2", "0 - Don't publicly announce bad values, just silently fix them. \
 1 - Publicly announce bad values (recommended for competitive). 2 - Only notify admins about bad values.", _, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
-    hCvar_LogToFile               = CreateConVar("sm_rates_log", "1", "Whether to log rate violations to file.", _, true, 0.0, true, 1.0);
+    hCvar_LogToFile               = CreateConVar("sm_rates_log", "1", "Whether to write rate violations to log file.", _, true, 0.0, true, 1.0);
 
     // Sanity check to ensure the value range based limits make sense.
     if (MIN_INTERP_MIN_BOUND > MAX_INTERP_MIN_BOUND) {
