@@ -209,7 +209,7 @@ void ValidateRates(const int client)
     int interp_len     = strlen(interp);
     int i = 0;
 
-    // Check rate
+    // Check "rate" validity
     for (; i < MAX_RATE_LENGTH && i < rate_len; ++i) {
         if (!IsCharNumeric(rate[i])) {
             RestoreRate(client, RATE_TYPE_RATE, rate);
@@ -217,7 +217,7 @@ void ValidateRates(const int client)
         }
     }
 
-    // Check cl_cmdrate validity
+    // Check "cl_cmdrate" validity
     for (i = 0; i < MAX_RATE_LENGTH && i < cmdRate_len; ++i) {
         if (!IsCharNumeric(cmdRate[i])) {
             RestoreRate(client, RATE_TYPE_CMDRATE, cmdRate);
@@ -225,7 +225,7 @@ void ValidateRates(const int client)
         }
     }
 
-    // Check cl_updaterate validity
+    // Check "cl_updaterate" validity
     for (i = 0; i < MAX_RATE_LENGTH && i < updateRate_len; ++i) {
         if (!IsCharNumeric(updateRate[i])) {
             RestoreRate(client, RATE_TYPE_UPDATERATE, updateRate);
@@ -235,7 +235,7 @@ void ValidateRates(const int client)
 
 #if TEST_CL_INTERPOLATE
     if (hCvar_ForceInterp.BoolValue) {
-        // Make sure client has cl_interpolate enabled
+        // Make sure the client has "cl_interpolate" enabled
         float flInterpEnabled = StringToFloat(interpEnabled);
         if (flInterpEnabled != 1) {
             RestoreRate(client, RATE_TYPE_INTERP_ENABLED, interpEnabled);
@@ -243,7 +243,7 @@ void ValidateRates(const int client)
     }
 #endif
 
-    // Check cl_interp validity
+    // Check "cl_interp" validity
     int decimalPoints = 0;
     for (i = 0; i < MAX_RATE_LENGTH && i < interp_len; ++i) {
         // Decimal points are allowed in cl_interp
