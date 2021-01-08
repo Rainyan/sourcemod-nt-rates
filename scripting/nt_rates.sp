@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.6"
+#define PLUGIN_VERSION "0.2.7"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -12,12 +12,17 @@
 
 #define MAX_RATE_CVAR_NAME_LENGTH (14 + 1) // "cl_interpolate" + 0
 
+// "cl_interpolate" is already sv_cheats protected in NT, but you can flip this bool to enforce it anyway.
+#define TEST_CL_INTERPOLATE false
+
 Handle hTimer_RateCheck = null;
 
 ConVar hCvar_Interval, hCvar_DefaultRate, hCvar_DefaultCmdRate,
     hCvar_DefaultUpdateRate, hCvar_DefaultInterp, hCvar_MinInterp,
-    hCvar_MaxInterp, hCvar_ForceInterp, hCvar_Verbosity,
-    hCvar_LogToFile,
+    hCvar_MaxInterp, hCvar_Verbosity, hCvar_LogToFile,
+#if TEST_CL_INTERPOLATE
+    hCvar_ForceInterp,
+#endif
     // native cvars
     hCvar_Rate, hCvar_CmdRate, hCvar_UpdateRate,
     hCvar_Interp;
@@ -73,7 +78,11 @@ public void OnPluginStart()
     hCvar_DefaultInterp           = CreateConVar("sm_rates_default_interp", "0.030303", "Default cl_interp value when restoring an invalid value.", _, true, 0.0, true, 0.1);
     hCvar_MinInterp               = CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, MIN_INTERP_MIN_BOUND, true, MIN_INTERP_MAX_BOUND);
     hCvar_MaxInterp               = CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, MAX_INTERP_MIN_BOUND, true, MAX_INTERP_MAX_BOUND);
+
+#if TEST_CL_INTERPOLATE
     hCvar_ForceInterp             = CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside cl_interpolate.", _, true, 0.0, true, 1.0);
+#endif
+
     hCvar_Verbosity               = CreateConVar("sm_rates_verbosity", "2", "0 - Don't publicly announce bad values, just silently fix them. \
 1 - Publicly announce bad values (recommended for competitive). 2 - Only notify admins about bad values.", _, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
     hCvar_LogToFile               = CreateConVar("sm_rates_log", "1", "Whether to write rate violations to log file.", _, true, 0.0, true, 1.0);
@@ -220,6 +229,7 @@ void ValidateRates(const int client)
         }
     }
 
+#if TEST_CL_INTERPOLATE
     if (hCvar_ForceInterp.BoolValue) {
         // Make sure client has cl_interpolate enabled
         float flInterpEnabled = StringToFloat(interpEnabled);
@@ -227,6 +237,7 @@ void ValidateRates(const int client)
             RestoreRate(client, RATE_TYPE_INTERP_ENABLED, interpEnabled);
         }
     }
+#endif
 
     // Check cl_interp validity
     int decimalPoints = 0;
@@ -340,13 +351,15 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
             {
                 restored_value = hCvar_DefaultInterp.FloatValue;
             }
+#if TEST_CL_INTERPOLATE
             case RATE_TYPE_INTERP_ENABLED:
             {
                 restored_value = hCvar_ForceInterp.FloatValue;
             }
+#endif
             default:
             {
-                SetFailState("Unsupported rate type: %d (is_limit_type: %d)", rate_type, is_limit_type);
+                SetFailState("Unexpected rate type: %d (is_limit_type: %d)", rate_type, is_limit_type);
             }
         }
     }
