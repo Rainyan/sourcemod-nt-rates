@@ -87,7 +87,7 @@ public void OnPluginStart()
     }
     // Make sure the default value of min and max cvars equals the appropriate constant define.
     else {
-        decl String:defaultVal[9];
+        decl String:defaultVal[MAX_RATE_LENGTH];
         if (hCvar_MinInterp.GetDefault(defaultVal, sizeof(defaultVal)) < 1) {
             SetFailState("Failed to get hCvar_MinInterp default value.");
         }
