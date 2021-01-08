@@ -24,41 +24,61 @@ These cvars can be set in the file cfg/sourcemod/plugin.nt_rates.cfg. If the fil
 
 * *sm_rates_version* — Plugin version.
 
+-----
+
 * *sm_rates_interval* — Interval (in seconds) to check players' rate values.
   * Default: 1
   * Range: (1 - 60)
+
+-----
 
 * *sm_rates_default_rate* — Default rate value when restoring an invalid value.
   * Default: 128000
   * Range: (5000 - 786432)
 
+-----
+
 * *sm_rates_default_cmdrate* — Default cl_cmdrate value when restoring an invalid value.
   * Default: 66
   * Range: (20 - 128)
+
+-----
 
 * *sm_rates_default_updaterate* — Default cl_updaterate value when restoring an invalid value.
   * Default: 66
   * Range: (20 - 128)
 
+-----
+
 * *sm_rates_default_interp* — Default cl_interp value when restoring an invalid value.
   * Default: 0.030303
   * Range: (0 - 0.1)
+
+-----
 
 * *sm_rates_min_interp* — Minimum allowed cl_interp value.
   * Default: 0
   * Range: (0 - 0.0303030)
 
+-----
+
 * *sm_rates_max_interp* — Maximum allowed cl_interp value.
   * Default: 0.1
   * Range: (0.0151515 - 0.1)
+
+-----
 
 * *sm_rates_force_interp* — Whether or not to enforce clientside cl_interpolate.
   * Default: 1
   * Range: (0 - 1)
 
+-----
+
 * *sm_rates_verbosity* — 0: Don't publicly announce bad values, just silently fix them. 1: Publicly announce bad values (recommended for competitive). 2: Only notify admins about bad values.
   * Default: 2
   * Range: (0 - 2)
+
+-----
 
 * *sm_rates_log* — Whether to write rate violations to log file.
   * Default: 1
