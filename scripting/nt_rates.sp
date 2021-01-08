@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.7"
+#define PLUGIN_VERSION "0.2.8"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -17,15 +17,15 @@
 
 Handle hTimer_RateCheck = null;
 
-ConVar hCvar_Interval, hCvar_DefaultRate, hCvar_DefaultCmdRate,
-    hCvar_DefaultUpdateRate, hCvar_DefaultInterp, hCvar_MinInterp,
-    hCvar_MaxInterp, hCvar_Verbosity, hCvar_LogToFile,
+ConVar hCvar_Interval = null, hCvar_DefaultRate = null, hCvar_DefaultCmdRate = null,
+    hCvar_DefaultUpdateRate = null, hCvar_DefaultInterp = null, hCvar_MinInterp = null,
+    hCvar_MaxInterp = null, hCvar_Verbosity = null, hCvar_LogToFile = null,
 #if TEST_CL_INTERPOLATE
-    hCvar_ForceInterp,
+    hCvar_ForceInterp = null,
 #endif
     // native cvars
-    hCvar_Rate, hCvar_CmdRate, hCvar_UpdateRate,
-    hCvar_Interp;
+    hCvar_Rate = null, hCvar_CmdRate = null, hCvar_UpdateRate = null,
+    hCvar_Interp = null;
 
 static const String:g_sTag[] = "[NT RATES]";
 
