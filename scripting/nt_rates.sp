@@ -74,8 +74,8 @@ public void OnPluginStart()
     hCvar_MinInterp               = CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, MIN_INTERP_MIN_BOUND, true, MIN_INTERP_MAX_BOUND);
     hCvar_MaxInterp               = CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, MAX_INTERP_MIN_BOUND, true, MAX_INTERP_MAX_BOUND);
     hCvar_ForceInterp             = CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp.", _, true, 0.0, true, 1.0);
-    hCvar_Verbosity               = CreateConVar("sm_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). \
-1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).", _, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
+    hCvar_Verbosity               = CreateConVar("sm_rates_verbosity", "2", "0 - Don't publicly announce bad values. \
+1 - Publicly announce bad values (recommended for competitive). 2 - Only notify admins about bad values.", _, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
     hCvar_LogToFile               = CreateConVar("sm_rates_log", "1", "Whether to log rate violations to file.", _, true, 0.0, true, 1.0);
 
     // Sanity check to ensure the value range based limits make sense.
@@ -177,7 +177,7 @@ void ValidateRates(const int client)
     // Check rate
     for (; i < MAX_RATE_LENGTH && i < rate_len; ++i) {
         if (!IsCharNumeric(rate[i])) {
-            RestoreRate(client, RATE_TYPE_RATE);
+            RestoreRate(client, RATE_TYPE_RATE, rate);
             break;
         }
     }
@@ -185,7 +185,7 @@ void ValidateRates(const int client)
     // Check cl_cmdrate validity
     for (i = 0; i < MAX_RATE_LENGTH && i < cmdRate_len; ++i) {
         if (!IsCharNumeric(cmdRate[i])) {
-            RestoreRate(client, RATE_TYPE_CMDRATE);
+            RestoreRate(client, RATE_TYPE_CMDRATE, cmdRate);
             break;
         }
     }
@@ -193,7 +193,7 @@ void ValidateRates(const int client)
     // Check cl_updaterate validity
     for (i = 0; i < MAX_RATE_LENGTH && i < updateRate_len; ++i) {
         if (!IsCharNumeric(updateRate[i])) {
-            RestoreRate(client, RATE_TYPE_UPDATERATE);
+            RestoreRate(client, RATE_TYPE_UPDATERATE, updateRate);
             break;
         }
     }
@@ -202,7 +202,7 @@ void ValidateRates(const int client)
         // Make sure client has cl_interpolate enabled
         float flInterpEnabled = StringToFloat(interpEnabled);
         if (flInterpEnabled != 1) {
-            RestoreRate(client, RATE_TYPE_INTERP_ENABLED);
+            RestoreRate(client, RATE_TYPE_INTERP_ENABLED, interpEnabled);
         }
     }
 
@@ -217,12 +217,12 @@ void ValidateRates(const int client)
                 // There's more than 1 decimal point, something is wrong with interp
                 ++decimalPoints > 1)
             {
-                RestoreRate(client, RATE_TYPE_INTERP);
+                RestoreRate(client, RATE_TYPE_INTERP, interp);
                 break;
             }
         }
         else if (!IsCharNumeric(interp[i])) {
-            RestoreRate(client, RATE_TYPE_INTERP);
+            RestoreRate(client, RATE_TYPE_INTERP, interp);
             break;
         }
     }
@@ -232,15 +232,15 @@ void ValidateRates(const int client)
     if (!g_bWasInterpFixedThisPass[client]) {
         float flInterp = StringToFloat(interp);
         if (flInterp < hCvar_MinInterp.FloatValue) {
-            CapInterp(client, RATE_LIMIT_TYPE_MIN);
+            CapInterp(client, RATE_LIMIT_TYPE_MIN, interp);
         }
         else if (flInterp > hCvar_MaxInterp.FloatValue) {
-            CapInterp(client, RATE_LIMIT_TYPE_MAX);
+            CapInterp(client, RATE_LIMIT_TYPE_MAX, interp);
         }
     }
 }
 
-void RestoreRate(const int client, const RATE_TYPE rateType)
+void RestoreRate(const int client, const RATE_TYPE rateType, const char[] offendingValue)
 {
     if (!IsValidClient(client)) {
         return;
@@ -282,10 +282,10 @@ void RestoreRate(const int client, const RATE_TYPE rateType)
         }
     }
     ClientCommand(client, "%s %s", cvarName, defaultValue);
-    NotifyRestore(client, rateType, cvarName);
+    NotifyRestore(client, rateType, cvarName, offendingValue);
 }
 
-void CapInterp(const int client, const RATE_LIMIT_TYPE capType)
+void CapInterp(const int client, const RATE_LIMIT_TYPE capType, const char[] offendingValue)
 {
     if (!IsValidClient(client)) {
         return;
@@ -293,7 +293,7 @@ void CapInterp(const int client, const RATE_LIMIT_TYPE capType)
     decl String:restoredInterp[MAX_RATE_LENGTH];
     GetConVarString((capType == RATE_LIMIT_TYPE_MIN) ? hCvar_MinInterp : hCvar_MaxInterp, restoredInterp, sizeof(restoredInterp));
     ClientCommand(client, "cl_interp %s", restoredInterp);
-    NotifyRestore(client, RATE_TYPE_INTERP, "cl_interp", true, capType);
+    NotifyRestore(client, RATE_TYPE_INTERP, "cl_interp", offendingValue, true, capType);
 }
 
 bool IsValidClient(const int client)
@@ -301,7 +301,7 @@ bool IsValidClient(const int client)
     return client > 0 && client <= MaxClients && IsClientInGame(client);
 }
 
-void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rate_type_name, const bool is_limit_type = false, const RATE_LIMIT_TYPE limit_type = RATE_LIMIT_TYPE_MIN)
+void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rate_type_name, const char[] offendingValue, const bool is_limit_type = false, const RATE_LIMIT_TYPE limit_type = RATE_LIMIT_TYPE_MIN)
 {
     if (hCvar_Verbosity.IntValue == VERBOSITY_NONE || !IsValidClient(client)) {
         return;
@@ -362,22 +362,32 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
     switch (hCvar_Verbosity.IntValue) {
         case VERBOSITY_PUBLIC:
         {
-            PrintToChatAll("%s Player \"%s\" had %s value of \"%s\" than allowed. The value has been %s to the %s of \"%f\".",
+            PrintToChatAndConsoleAll("%s Player \"%s\" had %s value of \"%s\" (\"%s\") %s",  
                 g_sTag,
                 clientName,
                 is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "smaller" : "larger") : "invalid",
                 rate_type_name,
+                offendingValue,
+                is_limit_type ? "than allowed." : ".");
+
+            PrintToChatAndConsoleAll("%s The value has been %s to the %s of \"%f\".",
+                g_sTag,
                 is_limit_type ? "capped" : "restored",
                 is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
                 restored_value);
         }
         case VERBOSITY_ADMIN_ONLY:
         {
-            PrintToAdmins(true, true, "%s Player \"%s\" had %s value of \"%s\" than allowed. The value has been %s to the %s of \"%f\".",
+            PrintToAdmins(true, true, "%s Player \"%s\" had %s value of \"%s\" (\"%s\") %s",
                 g_sTag,
                 clientName,
                 is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "smaller" : "larger") : "invalid",
                 rate_type_name,
+                offendingValue,
+                is_limit_type ? "than allowed." : ".");
+
+            PrintToAdmins(true, true, "%s The value has been %s to the %s of \"%f\".",
+                g_sTag,
                 is_limit_type ? "capped" : "restored",
                 is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
                 restored_value);
@@ -391,8 +401,22 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
         char teamName[11]; // strlen of "Unassigned" + \0
         GetTeamName(GetClientTeam(client), teamName, sizeof(teamName));
 
-        LogToGame("%s: \"%s<%d><%s><%s>\" had invalid client side cvar value of \"%s\". It has been restored within acceptable bounds.",
-            g_sTag, clientName, GetClientUserId(client), clientAuthId, teamName, rate_type_name);
+        LogToGame("%s: \"%s<%d><%s><%s>\" had invalid client side cvar value of \"%s\" (\"%s\"). It has been restored within acceptable bounds (%f).",
+            g_sTag, clientName, GetClientUserId(client), clientAuthId, teamName, rate_type_name, offendingValue, restored_value);
+    }
+}
+
+stock void PrintToChatAndConsoleAll(const char[] message, any ...)
+{
+    decl String:formatMsg[MAX_MESSAGE_LENGTH];
+    VFormat(formatMsg, sizeof(formatMsg), message, 2);
+
+    for (int client = 1; client <= MaxClients; ++client) {
+        if (!IsValidClient(client)) {
+            continue;
+        }
+        PrintToChat(client, formatMsg);
+        PrintToConsole(client, formatMsg);
     }
 }
 
