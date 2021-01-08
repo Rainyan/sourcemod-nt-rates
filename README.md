@@ -20,7 +20,7 @@ Note: If you're using this plugin for a competitive server, it's recommended you
 
 ## Cvars
 
-These cvars can be set in the file cfg/sourcemod/plugin.nt_rates.cfg. If the file doesn't exist, it is automatically generated on the first run of this plugin.
+These cvars can be set in the file *cfg/sourcemod/plugin.nt_rates.cfg*. If the file doesn't exist, it is automatically generated on the first run of this plugin.
 
 -----
 
