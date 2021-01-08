@@ -184,11 +184,10 @@ void ValidateRates(const int client)
         if (interp[i] == '.') {
             // Interp ended in a decimal point instead of number (eg 0.)
             // This may be ok, but we're fixing it jic
-            if (i + 1 == interp_len) {
-                RestoreRate(client, RATE_TYPE_INTERP);
-                break;
-            }
-            else if (++decimalPoints > 1) { // There's more than 1 decimal point, something is wrong with interp
+            if (i + 1 == interp_len ||
+                // There's more than 1 decimal point, something is wrong with interp
+                ++decimalPoints > 1)
+            {
                 RestoreRate(client, RATE_TYPE_INTERP);
                 break;
             }
