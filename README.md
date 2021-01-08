@@ -18,10 +18,10 @@ These cvars can be set in the file cfg/sourcemod/plugin.nt_rates.cfg. If the fil
 
 * *sm_rates_version* — Plugin version.
 * *sm_rates_interval* — Interval (in seconds) to check players' rate values. Default: 1. Range: (1 - 60).
-* *sm_rates_default_rate* — Default rate value when restoring invalid value. Default: 128000. Range: (5000 - 786432).
-* *sm_rates_default_cmdrate* — Default cl_cmdrate value when restoring invalid value. Default: 66. Range: (20 - 128).
-* *sm_rates_default_updaterate* — Default cl_updaterate value when restoring invalid value. Default: 66. Range: (20 - 128).
-* *sm_rates_default_interp* — Default cl_interp value when restoring invalid value. Default: 0.030303. Range: (0 - 0.1).
+* *sm_rates_default_rate* — Default rate value when restoring an invalid value. Default: 128000. Range: (5000 - 786432).
+* *sm_rates_default_cmdrate* — Default cl_cmdrate value when restoring an invalid value. Default: 66. Range: (20 - 128).
+* *sm_rates_default_updaterate* — Default cl_updaterate value when restoring an invalid value. Default: 66. Range: (20 - 128).
+* *sm_rates_default_interp* — Default cl_interp value when restoring an invalid value. Default: 0.030303. Range: (0 - 0.1).
 * *sm_rates_min_interp* — Minimum allowed cl_interp value. Default: 0. Range: (0 - 0.0303030).
 * *sm_rates_max_interp* — Maximum allowed cl_interp value. Default: 0.1. Range: (0.0151515 - 0.1).
 * *sm_rates_force_interp* — Whether or not to enforce clientside cl_interpolate. Default: 1. Range: (0 - 1).
