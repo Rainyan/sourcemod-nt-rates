@@ -222,22 +222,22 @@ void RestoreRate(const int client, const RATE_TYPE rateType)
             hCvar_DefaultRate.GetString(defaultValue, sizeof(defaultValue));
             hCvar_Rate.GetName(cvarName, sizeof(cvarName));
         }
-            case RATE_TYPE_CMDRATE:
+        case RATE_TYPE_CMDRATE:
         {
             hCvar_DefaultCmdRate.GetString(defaultValue, sizeof(defaultValue));
             hCvar_CmdRate.GetName(cvarName, sizeof(cvarName));
         }
-            case RATE_TYPE_UPDATERATE:
+        case RATE_TYPE_UPDATERATE:
         {
             hCvar_DefaultUpdateRate.GetString(defaultValue, sizeof(defaultValue));
             hCvar_UpdateRate.GetName(cvarName, sizeof(cvarName));
         }
-            case RATE_TYPE_INTERP:
+        case RATE_TYPE_INTERP:
         {
             hCvar_DefaultInterp.GetString(defaultValue, sizeof(defaultValue));
             hCvar_Interp.GetName(cvarName, sizeof(cvarName));
         }
-            case RATE_TYPE_INTERP_ENABLED:
+        case RATE_TYPE_INTERP_ENABLED:
         {
             strcopy(defaultValue, sizeof(defaultValue), "1");
             hCvar_Interpolate.GetName(cvarName, sizeof(cvarName));
