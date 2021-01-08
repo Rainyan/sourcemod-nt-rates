@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.2"
+#define PLUGIN_VERSION "0.2.3"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -173,13 +173,10 @@ public Action Timer_RateCheck(Handle timer)
     return Plugin_Continue;
 }
 
-// Make sure rates are properly formatted
+// Make sure rates are properly formatted.
+// Assumes input is always a valid client.
 void ValidateRates(const int client)
 {
-    if (!IsValidClient(client)) {
-        return;
-    }
-
     decl String:rate                [MAX_RATE_LENGTH];
     decl String:cmdRate             [MAX_RATE_LENGTH];
     decl String:updateRate          [MAX_RATE_LENGTH];
