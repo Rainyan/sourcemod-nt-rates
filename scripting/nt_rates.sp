@@ -229,7 +229,7 @@ void ValidateRates(const int client)
     }
 
     // Check cl_interp validity
-    int decimalPoints;
+    int decimalPoints = 0;
     for (i = 0; i < MAX_RATE_LENGTH && i < interp_len; ++i) {
         // Decimal points are allowed in cl_interp
         if (interp[i] == '.') {
