@@ -1,4 +1,5 @@
 #include <sourcemod>
+#include <sdktools>
 
 #pragma semicolon 1
 
@@ -16,6 +17,7 @@ Handle hTimer_RateCheck = null;
 ConVar hCvar_Interval, hCvar_DefaultRate, hCvar_DefaultCmdRate,
     hCvar_DefaultUpdateRate, hCvar_DefaultInterp, hCvar_MinInterp,
     hCvar_MaxInterp, hCvar_ForceInterp, hCvar_Verbosity,
+    hCvar_LogToFile,
     // native cvars
     hCvar_Rate, hCvar_CmdRate, hCvar_UpdateRate,
     hCvar_Interp, hCvar_Interpolate;
@@ -67,6 +69,7 @@ public void OnPluginStart()
     hCvar_ForceInterp             = CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp.", _, true, 0.0, true, 1.0);
     hCvar_Verbosity               = CreateConVar("sm_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). \
 1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).", _, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
+    hCvar_LogToFile               = CreateConVar("sm_rates_log", "1", "Whether to log rate violations to file.", _, true, 0.0, true, 1.0);
 
     hCvar_Rate        = FindConVar("rate");
     hCvar_CmdRate     = FindConVar("cl_cmdrate");
@@ -247,6 +250,10 @@ void RestoreRate(const int client, const RATE_TYPE rateType)
             strcopy(defaultValue, sizeof(defaultValue), "1");
             hCvar_Interpolate.GetName(cvarName, sizeof(cvarName));
         }
+        default:
+        {
+            SetFailState("Unexpected rate type: %d", rateType);
+        }
     }
     ClientCommand(client, "%s %s", cvarName, defaultValue);
     NotifyRestore(client, rateType, cvarName);
@@ -349,6 +356,17 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
                 is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
                 restored_value);
         }
+    }
+
+    if (hCvar_LogToFile.BoolValue) {
+        char clientAuthId[32];
+        GetClientAuthId(client, AuthId_Steam2, clientAuthId, sizeof(clientAuthId));
+
+        char teamName[11]; // strlen of "Unassigned" + \0
+        GetTeamName(GetClientTeam(client), teamName, sizeof(teamName));
+
+        LogToGame("%s: \"%s<%d><%s><%s>\" had invalid client side cvar value of \"%s\". It has been restored within acceptable bounds.",
+            g_sTag, clientName, GetClientUserId(client), clientAuthId, teamName, rate_type_name);
     }
 }
 
