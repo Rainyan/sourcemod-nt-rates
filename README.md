@@ -47,7 +47,9 @@ These cvars can be set in the file cfg/sourcemod/plugin.nt_rates.cfg. If the fil
 * *sm_rates_force_interp* — Whether or not to enforce clientside cl_interpolate.
   * Default: 1
   * Range: (0 - 1)
-* *sm_rates_verbosity* — 0: Don't publicly announce bad values, just silently fix them. 1: Publicly announce bad values (recommended for competitive). 2: Only notify admins about bad values. Default: 2. Range: (0 - 2).
+* *sm_rates_verbosity* — 0: Don't publicly announce bad values, just silently fix them. 1: Publicly announce bad values (recommended for competitive). 2: Only notify admins about bad values.
+  * Default: 2
+  * Range: (0 - 2)
 * *sm_rates_log* — Whether to write rate violations to log file.
   * Default: 1
   * Range: (0 - 1)
