@@ -53,7 +53,7 @@ These cvars can be set in the file *cfg/sourcemod/plugin.nt_rates.cfg*. If the f
 -----
 
 * *sm_rates_default_interp* — Default cl_interp value when restoring an invalid value.
-  * Default: 0.030303
+  * Default: 0.0303030
   * Range: (0 - 0.1)
 
 -----
