@@ -128,6 +128,7 @@ void ValidateRates(const int client)
     if (!IsValidClient(client)) {
         return;
     }
+
     decl String:rate                [MAX_RATE_LENGTH];
     decl String:cmdRate             [MAX_RATE_LENGTH];
     decl String:updateRate          [MAX_RATE_LENGTH];
@@ -143,6 +144,7 @@ void ValidateRates(const int client)
     int updateRate_len = strlen(updateRate);
     int interp_len     = strlen(interp);
     int i = 0;
+
     // Check rate
     for (; i < MAX_RATE_LENGTH && i < rate_len; ++i) {
         if (!IsCharNumeric(rate[i])) {
@@ -150,6 +152,7 @@ void ValidateRates(const int client)
             break;
         }
     }
+
     // Check cl_cmdrate validity
     for (i = 0; i < MAX_RATE_LENGTH && i < cmdRate_len; ++i) {
         if (!IsCharNumeric(cmdRate[i])) {
@@ -157,6 +160,7 @@ void ValidateRates(const int client)
             break;
         }
     }
+
     // Check cl_updaterate validity
     for (i = 0; i < MAX_RATE_LENGTH && i < updateRate_len; ++i) {
         if (!IsCharNumeric(updateRate[i])) {
@@ -164,6 +168,7 @@ void ValidateRates(const int client)
             break;
         }
     }
+
     if (hCvar_ForceInterp.BoolValue) {
         // Make sure client has cl_interpolate enabled
         float flInterpEnabled = StringToFloat(interpEnabled);
@@ -171,6 +176,7 @@ void ValidateRates(const int client)
             RestoreRate(client, RATE_TYPE_INTERP_ENABLED);
         }
     }
+
     // Check cl_interp validity
     int decimalPoints;
     for (i = 0; i < MAX_RATE_LENGTH && i < interp_len; ++i) {
@@ -192,17 +198,17 @@ void ValidateRates(const int client)
             break;
         }
     }
-    // This player's cl_interp was just reset to defaults this pass.
-    // Stop here, so we don't nag about incorrect values again needlessly.
-    if (g_bWasInterpFixedThisPass[client]) {
-        return;
-    }
-    float flInterp = StringToFloat(interp);
-    if (flInterp < hCvar_MinInterp.FloatValue) {
-        CapInterp(client, RATE_LIMIT_TYPE_MIN);
-    }
-    else if (flInterp > hCvar_MaxInterp.FloatValue) {
-        CapInterp(client, RATE_LIMIT_TYPE_MAX);
+
+    // Only do this if the player's cl_interp was not just reset to defaults on this pass.
+    // This way we won't needlessly nag about incorrect values multiple times in a row.
+    if (!g_bWasInterpFixedThisPass[client]) {
+        float flInterp = StringToFloat(interp);
+        if (flInterp < hCvar_MinInterp.FloatValue) {
+            CapInterp(client, RATE_LIMIT_TYPE_MIN);
+        }
+        else if (flInterp > hCvar_MaxInterp.FloatValue) {
+            CapInterp(client, RATE_LIMIT_TYPE_MAX);
+        }
     }
 }
 
