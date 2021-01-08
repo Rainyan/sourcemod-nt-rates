@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2"
+#define PLUGIN_VERSION "0.2.1"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -133,8 +133,12 @@ public void OnPluginStart()
 void CvarChanged_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
 {
     float min, max;
-    convar.GetBounds(ConVarBound_Lower, min);
-    convar.GetBounds(ConVarBound_Upper, max);
+    if (!convar.GetBounds(ConVarBound_Lower, min)) {
+        SetFailState("no ConVarBound_Lower set");
+    }
+    else if (!convar.GetBounds(ConVarBound_Upper, max)) {
+        SetFailState("no ConVarBound_Upper set");
+    }
 
     delete hTimer_RateCheck;
     hTimer_RateCheck = CreateTimer(Clamp(StringToFloat(newValue), min, max), Timer_RateCheck, _, TIMER_REPEAT);
