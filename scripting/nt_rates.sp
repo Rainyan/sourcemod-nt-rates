@@ -59,6 +59,8 @@ public Plugin myinfo = {
 
 public void OnPluginStart()
 {
+    CreateConVar("sm_rates_version", PLUGIN_VERSION, "NT Rates plugin version.", FCVAR_DONTRECORD);
+
     hCvar_Interval                = CreateConVar("sm_rates_interval", "1.0", "Interval (in seconds) to check players' rate values.", _, true, 1.0, true, 60.0);
     hCvar_DefaultRate             = CreateConVar("sm_rates_default_rate", "128000", "Default rate value.", _, true, 5000.0, true, 786432.0);
     hCvar_DefaultCmdRate          = CreateConVar("sm_rates_default_cmdrate", "66", "Default cl_cmdrate value.", _, true, 20.0, true, 128.0);
