@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.4"
+#define PLUGIN_VERSION "0.2.5"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -307,9 +307,6 @@ void RestoreRate(const int client, const RATE_TYPE rateType, const char[] offend
 
 void CapInterp(const int client, const RATE_LIMIT_TYPE capType, const char[] offendingValue)
 {
-    if (!IsValidClient(client)) {
-        return;
-    }
     decl String:restoredInterp[MAX_RATE_LENGTH];
     GetConVarString((capType == RATE_LIMIT_TYPE_MIN) ? hCvar_MinInterp : hCvar_MaxInterp, restoredInterp, sizeof(restoredInterp));
     ClientCommand(client, "cl_interp %s", restoredInterp);
