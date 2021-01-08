@@ -90,6 +90,8 @@ public void OnPluginStart()
     }
 
     hTimer_RateCheck = CreateTimer(hCvar_Interval.FloatValue , Timer_RateCheck, _, TIMER_REPEAT);
+
+    AutoExecConfig();
 }
 
 public void OnMapStart()
