@@ -209,7 +209,7 @@ void ValidateRates(const int client)
     int interp_len     = strlen(interp);
     int i = 0;
 
-    // Check "rate" validity
+    // Check "rate" validity.
     for (; i < MAX_RATE_LENGTH && i < rate_len; ++i) {
         if (!IsCharNumeric(rate[i])) {
             RestoreRate(client, RATE_TYPE_RATE, rate);
@@ -217,7 +217,7 @@ void ValidateRates(const int client)
         }
     }
 
-    // Check "cl_cmdrate" validity
+    // Check "cl_cmdrate" validity.
     for (i = 0; i < MAX_RATE_LENGTH && i < cmdRate_len; ++i) {
         if (!IsCharNumeric(cmdRate[i])) {
             RestoreRate(client, RATE_TYPE_CMDRATE, cmdRate);
@@ -225,7 +225,7 @@ void ValidateRates(const int client)
         }
     }
 
-    // Check "cl_updaterate" validity
+    // Check "cl_updaterate" validity.
     for (i = 0; i < MAX_RATE_LENGTH && i < updateRate_len; ++i) {
         if (!IsCharNumeric(updateRate[i])) {
             RestoreRate(client, RATE_TYPE_UPDATERATE, updateRate);
@@ -243,13 +243,13 @@ void ValidateRates(const int client)
     }
 #endif
 
-    // Check "cl_interp" validity
+    // Check "cl_interp" validity.
     int decimalPoints = 0;
     for (i = 0; i < MAX_RATE_LENGTH && i < interp_len; ++i) {
         // Decimal points are allowed in cl_interp
         if (interp[i] == '.') {
-            // Interp ended in a decimal point instead of number (eg 0.)
-            // This may be ok, but we're fixing it jic
+            // Interp ended in a decimal point instead of number (eg: "0.").
+            // This may be ok, but we're fixing it, jic.
             if (i + 1 == interp_len ||
                 // There's more than 1 decimal point, something is wrong with interp
                 ++decimalPoints > 1)
