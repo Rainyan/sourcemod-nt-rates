@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.3"
+#define PLUGIN_VERSION "0.2.4"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -264,10 +264,6 @@ void ValidateRates(const int client)
 
 void RestoreRate(const int client, const RATE_TYPE rateType, const char[] offendingValue)
 {
-    if (!IsValidClient(client)) {
-        return;
-    }
-
     decl String:defaultValue[MAX_RATE_LENGTH];
     decl String:cvarName[MAX_RATE_CVAR_NAME_LENGTH];
 
