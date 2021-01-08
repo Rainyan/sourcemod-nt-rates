@@ -62,8 +62,8 @@ public Plugin myinfo = {
 #define MAX_INTERP_MIN_BOUND 0.0151515
 #define MAX_INTERP_MAX_BOUND 0.1
 
-{
 public void OnPluginStart()
+{
     CreateConVar("sm_rates_version", PLUGIN_VERSION, "NT Rates plugin version.", FCVAR_DONTRECORD);
 
     hCvar_Interval                = CreateConVar("sm_rates_interval", "1.0", "Interval (in seconds) to check players' rate values.", _, true, 1.0, true, 60.0);
@@ -85,7 +85,7 @@ public void OnPluginStart()
     else if (MIN_INTERP_MAX_BOUND > MAX_INTERP_MAX_BOUND) {
         SetFailState("MIN_INTERP_MAX_BOUND (%f) > MAX_INTERP_MAX_BOUND (%f)", MIN_INTERP_MAX_BOUND, MAX_INTERP_MAX_BOUND);
     }
-	// Make sure the default value of min and max cvars equals the appropriate constant define.
+    // Make sure the default value of min and max cvars equals the appropriate constant define.
     else {
         decl String:defaultVal[9];
         if (hCvar_MinInterp.GetDefault(defaultVal, sizeof(defaultVal)) < 1) {
