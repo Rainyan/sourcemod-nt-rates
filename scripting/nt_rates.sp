@@ -262,6 +262,7 @@ void ValidateRates(const int client)
     }
 }
 
+// Assumes input is always a valid client.
 void RestoreRate(const int client, const RATE_TYPE rateType, const char[] offendingValue)
 {
     decl String:defaultValue[MAX_RATE_LENGTH];
