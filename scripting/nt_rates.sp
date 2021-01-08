@@ -188,7 +188,7 @@ void ValidateRates(const int client)
                 RestoreRate(client, RATE_TYPE_INTERP);
                 break;
             }
-            if (++decimalPoints > 1) { // There's more than 1 decimal point, something is wrong with interp
+            else if (++decimalPoints > 1) { // There's more than 1 decimal point, something is wrong with interp
                 RestoreRate(client, RATE_TYPE_INTERP);
                 break;
             }
