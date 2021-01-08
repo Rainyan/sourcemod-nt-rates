@@ -3,17 +3,21 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.8"
+#define PLUGIN_VERSION "0.2.9"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
 
 #define NEO_MAX_PLAYERS 32
 
-#define MAX_RATE_CVAR_NAME_LENGTH (14 + 1) // "cl_interpolate" + 0
-
 // "cl_interpolate" is already sv_cheats protected in NT, but you can enable this compile flag to enforce its check anyway.
 #define TEST_CL_INTERPOLATE false
+
+#if TEST_CL_INTERPOLATE
+#define MAX_RATE_CVAR_NAME_LENGTH (14 + 1) // "cl_interpolate" + 0
+#else
+#define MAX_RATE_CVAR_NAME_LENGTH (13 + 1) // "cl_updaterate" + 0
+#endif
 
 Handle hTimer_RateCheck = null;
 
