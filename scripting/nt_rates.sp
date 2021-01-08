@@ -20,7 +20,7 @@ ConVar hCvar_Interval, hCvar_DefaultRate, hCvar_DefaultCmdRate,
     hCvar_LogToFile,
     // native cvars
     hCvar_Rate, hCvar_CmdRate, hCvar_UpdateRate,
-    hCvar_Interp, hCvar_Interpolate;
+    hCvar_Interp;
 
 static const String:g_sTag[] = "[NT RATES]";
 
@@ -57,6 +57,11 @@ public Plugin myinfo = {
     url                = "https://github.com/Rainyan/sourcemod-nt-rates"
 };
 
+#define MIN_INTERP_MIN_BOUND 0.0
+#define MIN_INTERP_MAX_BOUND 0.0303030
+#define MAX_INTERP_MIN_BOUND 0.0151515
+#define MAX_INTERP_MAX_BOUND 0.1
+
 public void OnPluginStart()
 {
     CreateConVar("sm_rates_version", PLUGIN_VERSION, "NT Rates plugin version.", FCVAR_DONTRECORD);
@@ -66,18 +71,25 @@ public void OnPluginStart()
     hCvar_DefaultCmdRate          = CreateConVar("sm_rates_default_cmdrate", "66", "Default cl_cmdrate value.", _, true, 20.0, true, 128.0);
     hCvar_DefaultUpdateRate       = CreateConVar("sm_rates_default_updaterate", "66", "Default cl_updaterate value.", _, true, 20.0, true, 128.0);
     hCvar_DefaultInterp           = CreateConVar("sm_rates_default_interp", "0.030303", "Default cl_interp value.", _, true, 0.0, true, 0.1);
-    hCvar_MinInterp               = CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, 0.0, true, 0.0303030);
-    hCvar_MaxInterp               = CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, 0.0151515, true, 0.1);
+    hCvar_MinInterp               = CreateConVar("sm_rates_min_interp", "0", "Minimum allowed cl_interp value.", _, true, MIN_INTERP_MIN_BOUND, true, MIN_INTERP_MAX_BOUND);
+    hCvar_MaxInterp               = CreateConVar("sm_rates_max_interp", "0.1", "Maximum allowed cl_interp value.", _, true, MAX_INTERP_MIN_BOUND, true, MAX_INTERP_MAX_BOUND);
     hCvar_ForceInterp             = CreateConVar("sm_rates_force_interp", "1", "Whether or not to enforce clientside interp.", _, true, 0.0, true, 1.0);
     hCvar_Verbosity               = CreateConVar("sm_rates_verbosity", "0", "0 - Don't publicly nag about bad values (pubs). \
 1 - Nag about bad values (comp). 2 - Just notify admins about bad values (debug).", _, true, VERBOSITY_NONE * 1.0, true, VERBOSITY_MAX_VALUE * 1.0);
     hCvar_LogToFile               = CreateConVar("sm_rates_log", "1", "Whether to log rate violations to file.", _, true, 0.0, true, 1.0);
 
+    // Sanity check to ensure the value range based limits make sense.
+    if (MIN_INTERP_MIN_BOUND > MAX_INTERP_MIN_BOUND) {
+        SetFailState("MIN_INTERP_MIN_BOUND (%f) > MAX_INTERP_MIN_BOUND (%f)", MIN_INTERP_MIN_BOUND, MAX_INTERP_MIN_BOUND);
+    }
+    else if (MIN_INTERP_MAX_BOUND > MAX_INTERP_MAX_BOUND) {
+        SetFailState("MIN_INTERP_MAX_BOUND (%f) > MAX_INTERP_MAX_BOUND (%f)", MIN_INTERP_MAX_BOUND, MAX_INTERP_MAX_BOUND);
+    }
+
     hCvar_Rate        = FindConVar("rate");
     hCvar_CmdRate     = FindConVar("cl_cmdrate");
     hCvar_UpdateRate  = FindConVar("cl_updaterate");
     hCvar_Interp      = FindConVar("cl_interp");
-    hCvar_Interpolate = FindConVar("cl_interpolate");
     if (hCvar_Rate == null) {
         SetFailState("Failed to find native cvar \"rate\"");
     }
@@ -90,18 +102,14 @@ public void OnPluginStart()
     else if (hCvar_Interp == null) {
         SetFailState("Failed to find native cvar \"cl_interp\"");
     }
-    else if (hCvar_Interpolate == null) {
-        SetFailState("Failed to find native cvar \"cl_interpolate\"");
-    }
 
     hTimer_RateCheck = CreateTimer(hCvar_Interval.FloatValue , Timer_RateCheck, _, TIMER_REPEAT);
 
     AutoExecConfig();
-}
 
-public void OnMapStart()
-{
     HookConVarChange(hCvar_Interval, CvarChanged_Interval);
+    HookConVarChange(hCvar_MinInterp, CvarChanged_InterpMin);
+    HookConVarChange(hCvar_MaxInterp, CvarChanged_InterpMax);
 }
 
 void CvarChanged_Interval(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -112,6 +120,22 @@ void CvarChanged_Interval(ConVar convar, const char[] oldValue, const char[] new
 
     delete hTimer_RateCheck;
     hTimer_RateCheck = CreateTimer(Clamp(StringToFloat(newValue), min, max), Timer_RateCheck, _, TIMER_REPEAT);
+}
+
+void CvarChanged_InterpMin(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+    // Need to clamp so that min <= max
+    if (StringToFloat(newValue) > hCvar_MaxInterp.FloatValue) {
+        hCvar_MaxInterp.SetString(newValue);
+    }
+}
+
+void CvarChanged_InterpMax(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+    // Need to clamp so that max >= min
+    if (StringToFloat(newValue) < hCvar_MinInterp.FloatValue) {
+        hCvar_MinInterp.SetString(newValue);
+    }
 }
 
 public Action Timer_RateCheck(Handle timer)
@@ -250,7 +274,7 @@ void RestoreRate(const int client, const RATE_TYPE rateType)
         case RATE_TYPE_INTERP_ENABLED:
         {
             strcopy(defaultValue, sizeof(defaultValue), "1");
-            hCvar_Interpolate.GetName(cvarName, sizeof(cvarName));
+            strcopy(cvarName, sizeof(cvarName), "cl_interpolate");
         }
         default:
         {
