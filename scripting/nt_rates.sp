@@ -270,6 +270,7 @@ void RestoreRate(const int client, const RATE_TYPE rateType, const char[] offend
         {
             hCvar_DefaultInterp.GetString(defaultValue, sizeof(defaultValue));
             hCvar_Interp.GetName(cvarName, sizeof(cvarName));
+            g_bWasInterpFixedThisPass[client] = true;
         }
         case RATE_TYPE_INTERP_ENABLED:
         {
@@ -350,6 +351,10 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
             case RATE_TYPE_UPDATERATE:
             {
                 hCvar_UpdateRate.GetBounds((limit_type == RATE_LIMIT_TYPE_MIN) ? ConVarBound_Lower : ConVarBound_Upper, restored_value);
+            }
+            case RATE_TYPE_INTERP:
+            {
+                restored_value = (limit_type == RATE_LIMIT_TYPE_MIN) ? hCvar_MinInterp.FloatValue : hCvar_MaxInterp.FloatValue;
             }
             default:
             {
