@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.11"
+#define PLUGIN_VERSION "0.2.12"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -324,6 +324,7 @@ void RestoreRate(const int client, const RATE_TYPE rateType, const char[] offend
             SetFailState("Unexpected rate type: %d", rateType);
         }
     }
+
     ClientCommand(client, "%s %s", cvarName, defaultValue);
     NotifyRestore(client, rateType, cvarName, offendingValue);
 }
@@ -343,6 +344,7 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
     if (hCvar_Verbosity.IntValue == VERBOSITY_NONE) {
         return;
     }
+
     float restored_value;
     if (!is_limit_type) {
         switch (rate_type)
@@ -400,9 +402,13 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
             }
         }
     }
-    decl String:clientName[MAX_NAME_LENGTH];
-    GetClientName(client, clientName, sizeof(clientName));
 
+    decl String:clientName[MAX_NAME_LENGTH];
+    if (!GetClientName(client, clientName, sizeof(clientName))) {
+        return;
+    }
+
+    // This print is split into two commands because it won't fit a single NT in-game chat line.
     PrintToChatAndConsoleAll(
         (hCvar_Verbosity.IntValue == VERBOSITY_ADMIN_ONLY),
         "%s Player \"%s\" had %s value of \"%s\" (\"%s\") %s",
@@ -420,10 +426,11 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
         restored_value);
 
     if (hCvar_LogToFile.BoolValue) {
+        // Zero initializing this, so we don't have to worry of the GetClientAuthId() failing.
         char clientAuthId[32];
         GetClientAuthId(client, AuthId_Steam2, clientAuthId, sizeof(clientAuthId));
 
-        char teamName[11]; // strlen of "Unassigned" + \0
+        decl String:teamName[11]; // strlen of "Unassigned" + \0
         GetTeamName(GetClientTeam(client), teamName, sizeof(teamName));
 
         LogToGame("%s: \"%s<%d><%s><%s>\" had invalid client side cvar value of \"%s\" (\"%s\"). It has been restored within acceptable bounds (%f).",
