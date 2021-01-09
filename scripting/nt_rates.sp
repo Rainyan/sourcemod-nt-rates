@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.13"
+#define PLUGIN_VERSION "0.2.14"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -219,7 +219,7 @@ void ValidateRates(const int client)
     int i = 0;
 
     // Check "rate" validity.
-    for (; i < MAX_RATE_LENGTH && i < rate_len; ++i) {
+    for (; i < rate_len; ++i) {
         if (!IsCharNumeric(rate[i])) {
             RestoreRate(client, RATE_TYPE_RATE, rate);
             break;
@@ -227,7 +227,7 @@ void ValidateRates(const int client)
     }
 
     // Check "cl_cmdrate" validity.
-    for (i = 0; i < MAX_RATE_LENGTH && i < cmdRate_len; ++i) {
+    for (i = 0; i < cmdRate_len; ++i) {
         if (!IsCharNumeric(cmdRate[i])) {
             RestoreRate(client, RATE_TYPE_CMDRATE, cmdRate);
             break;
@@ -235,7 +235,7 @@ void ValidateRates(const int client)
     }
 
     // Check "cl_updaterate" validity.
-    for (i = 0; i < MAX_RATE_LENGTH && i < updateRate_len; ++i) {
+    for (i = 0; i < updateRate_len; ++i) {
         if (!IsCharNumeric(updateRate[i])) {
             RestoreRate(client, RATE_TYPE_UPDATERATE, updateRate);
             break;
@@ -257,13 +257,13 @@ void ValidateRates(const int client)
     }
     else {
         int decimalPoints = 0;
-        for (i = 0; i < MAX_RATE_LENGTH && i < interp_len; ++i) {
+        for (i = 0; i < interp_len; ++i) {
             // Decimal points are allowed in cl_interp
             if (interp[i] == '.') {
                 // Interp ended in a decimal point instead of number (eg: "0.").
                 // This may be ok, but we're fixing it, jic.
                 if (i + 1 == interp_len ||
-                    // There's more than 1 decimal point, something is wrong with interp
+                    // There's more than 1 decimal point; something is wrong with interp
                     ++decimalPoints > 1)
                 {
                     RestoreRate(client, RATE_TYPE_INTERP, interp);
