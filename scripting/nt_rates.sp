@@ -10,7 +10,8 @@
 
 #define NEO_MAX_PLAYERS 32
 
-// "cl_interpolate" is already sv_cheats protected in NT, but you can enable this compile flag to enforce its check anyway.
+// "cl_interpolate" is already sv_cheats protected in NT,
+// but you can enable this compile flag to enforce its check anyway.
 #define TEST_CL_INTERPOLATE false
 
 #if TEST_CL_INTERPOLATE
@@ -339,7 +340,8 @@ void CapInterp(const int client, const RATE_LIMIT_TYPE capType, const char[] off
 }
 
 // Assumes input is always a valid client.
-void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rate_type_name, const char[] offendingValue, const bool is_limit_type = false, const RATE_LIMIT_TYPE limit_type = RATE_LIMIT_TYPE_MIN)
+void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rate_type_name, const char[] offendingValue,
+    const bool is_limit_type = false, const RATE_LIMIT_TYPE limit_type = RATE_LIMIT_TYPE_MIN)
 {
     if (hCvar_Verbosity.IntValue == VERBOSITY_NONE) {
         return;
@@ -433,7 +435,8 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
         decl String:teamName[11]; // strlen of "Unassigned" + \0
         GetTeamName(GetClientTeam(client), teamName, sizeof(teamName));
 
-        LogToGame("%s: \"%s<%d><%s><%s>\" had invalid client side cvar value of \"%s\" (\"%s\"). It has been restored within acceptable bounds (%f).",
+        LogToGame("%s: \"%s<%d><%s><%s>\" had invalid client side cvar value of \"%s\" (\"%s\"). \
+It has been restored within acceptable bounds (%f).",
             g_sTag, clientName, GetClientUserId(client), clientAuthId, teamName, rate_type_name, offendingValue, restored_value);
     }
 }
