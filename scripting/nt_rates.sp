@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.10"
+#define PLUGIN_VERSION "0.2.11"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -240,8 +240,7 @@ void ValidateRates(const int client)
 #if TEST_CL_INTERPOLATE
     if (hCvar_ForceInterp.BoolValue) {
         // Make sure the client has "cl_interpolate" enabled
-        float flInterpEnabled = StringToFloat(interpEnabled);
-        if (flInterpEnabled != 1) {
+        if (StringToInt(interpEnabled) != 1) {
             RestoreRate(client, RATE_TYPE_INTERP_ENABLED, interpEnabled);
         }
     }
