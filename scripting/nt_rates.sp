@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.9"
+#define PLUGIN_VERSION "0.2.10"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -194,14 +194,18 @@ void ValidateRates(const int client)
     decl String:cmdRate             [MAX_RATE_LENGTH];
     decl String:updateRate          [MAX_RATE_LENGTH];
     decl String:interp              [MAX_RATE_LENGTH];
+#if TEST_CL_INTERPOLATE
     decl String:interpEnabled       [MAX_RATE_LENGTH];
+#endif
 
     // This should never fail, but playing it safe.
     if (!GetClientInfo(client, "rate",              rate,             MAX_RATE_LENGTH)) { return; }
     if (!GetClientInfo(client, "cl_cmdrate",        cmdRate,          MAX_RATE_LENGTH)) { return; }
     if (!GetClientInfo(client, "cl_updaterate",     updateRate,       MAX_RATE_LENGTH)) { return; }
     if (!GetClientInfo(client, "cl_interp",         interp,           MAX_RATE_LENGTH)) { return; }
+#if TEST_CL_INTERPOLATE
     if (!GetClientInfo(client, "cl_interpolate",    interpEnabled,    MAX_RATE_LENGTH)) { return; }
+#endif
 
     int rate_len       = strlen(rate);
     int cmdRate_len    = strlen(cmdRate);
@@ -244,23 +248,28 @@ void ValidateRates(const int client)
 #endif
 
     // Check "cl_interp" validity.
-    int decimalPoints = 0;
-    for (i = 0; i < MAX_RATE_LENGTH && i < interp_len; ++i) {
-        // Decimal points are allowed in cl_interp
-        if (interp[i] == '.') {
-            // Interp ended in a decimal point instead of number (eg: "0.").
-            // This may be ok, but we're fixing it, jic.
-            if (i + 1 == interp_len ||
-                // There's more than 1 decimal point, something is wrong with interp
-                ++decimalPoints > 1)
-            {
+    if (interp_len == 0) {
+        RestoreRate(client, RATE_TYPE_INTERP, interp);
+    }
+    else {
+        int decimalPoints = 0;
+        for (i = 0; i < MAX_RATE_LENGTH && i < interp_len; ++i) {
+            // Decimal points are allowed in cl_interp
+            if (interp[i] == '.') {
+                // Interp ended in a decimal point instead of number (eg: "0.").
+                // This may be ok, but we're fixing it, jic.
+                if (i + 1 == interp_len ||
+                    // There's more than 1 decimal point, something is wrong with interp
+                    ++decimalPoints > 1)
+                {
+                    RestoreRate(client, RATE_TYPE_INTERP, interp);
+                    break;
+                }
+            }
+            else if (!IsCharNumeric(interp[i])) {
                 RestoreRate(client, RATE_TYPE_INTERP, interp);
                 break;
             }
-        }
-        else if (!IsCharNumeric(interp[i])) {
-            RestoreRate(client, RATE_TYPE_INTERP, interp);
-            break;
         }
     }
 
@@ -394,7 +403,7 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
     }
     decl String:clientName[MAX_NAME_LENGTH];
     GetClientName(client, clientName, sizeof(clientName));
-    
+
     PrintToChatAndConsoleAll(
         (hCvar_Verbosity.IntValue == VERBOSITY_ADMIN_ONLY),
         "%s Player \"%s\" had %s value of \"%s\" (\"%s\") %s",
@@ -404,7 +413,7 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
         rate_type_name,
         offendingValue,
         is_limit_type ? "than allowed." : ".");
-    
+
     PrintToChatAndConsoleAll(
         (hCvar_Verbosity.IntValue == VERBOSITY_ADMIN_ONLY),
         is_limit_type ? "capped" : "restored",
