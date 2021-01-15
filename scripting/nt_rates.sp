@@ -3,7 +3,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "0.2.14"
+#define PLUGIN_VERSION "0.2.15"
 
 #define MAX_RATE_LENGTH 9
 #define MAX_MESSAGE_LENGTH 512
@@ -427,6 +427,7 @@ void NotifyRestore(const int client, const RATE_TYPE rate_type, const char[] rat
 
     PrintToChatAndConsoleAll(
         (hCvar_Verbosity.IntValue == VERBOSITY_ADMIN_ONLY),
+        "It has been %s within acceptable %s bounds (%f).",
         is_limit_type ? "capped" : "restored",
         is_limit_type ? ((limit_type == RATE_LIMIT_TYPE_MIN) ? "minimum" : "maximum") : "default",
         restored_value);
