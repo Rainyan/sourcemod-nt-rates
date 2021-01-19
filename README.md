@@ -73,6 +73,7 @@ These cvars can be set in the file *cfg/sourcemod/plugin.nt_rates.cfg*. If the f
 * *sm_rates_force_interp* — Whether or not to enforce clientside cl_interpolate.
   * Default: 1
   * Range: (0 - 1)
+  * Note: This cvar requires the *TEST_CL_INTERPOLATE* compile flag to be set as true (default: false). It's disabled by default, as cl_interpolate is sv_cheats protected on most games (including NT), making it redundant.
 
 -----
 
